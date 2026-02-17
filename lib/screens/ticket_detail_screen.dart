@@ -377,12 +377,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }) {
     final m = Uri.encodeComponent(marca.trim());
     final mod = Uri.encodeComponent(modeloSinVersion.trim());
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Equipos/$m/$mod.png';
+    return 'http://192.168.3.7/img/Equipos/$m/$mod.png';
   }
 
   String _brandUrl(String marca) {
     final m = Uri.encodeComponent(marca.trim());
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Marcas/$m.png';
+    return 'http://192.168.3.7/img/Marcas/$m.png';
   }
 
   @override
@@ -393,6 +393,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     final marca = _s(d['maNombre']);
     final sn = _s(d['peSN']);
     final desc = _s(d['tiDescripcion']);
+    final diag = _s(d['tiDiagnostico']);
     final proc = _s(d['tiProceso']);
     final critic = _s(d['tiNivelCriticidad'], '3');
     _s(d['tiTipoTicket']);
@@ -557,7 +558,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        desc.isEmpty ? '—' : desc,
+                        desc.isEmpty ? 'Descripción no disponible' : desc,
                         style: const TextStyle(
                           color: textMuted,
                           fontSize: 12.5,
@@ -565,7 +566,44 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Diagnostico:',
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE9FFF0),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.healing_rounded,
+                              size: 16,
+                              color: Color.fromARGB(255, 51, 24, 169),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        diag.isEmpty
+                            ? 'Por el momento estamos diagnosticando el ticket c:'
+                            : diag,
+                        style: const TextStyle(
+                          color: textMuted,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
                       // Badge de proceso (como "Encuesta de Satisfacción")
                       if (!_loading && proc.trim().isNotEmpty)
                         _Badge(

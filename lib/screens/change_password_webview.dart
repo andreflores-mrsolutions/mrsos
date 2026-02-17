@@ -4,8 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 class ChangePasswordWebViewScreen extends StatefulWidget {
   const ChangePasswordWebViewScreen({super.key, required this.url});
 
-  final String
-  url; // ej: https://yellow-chicken-910471.hostingersite.com/php/cambiar_password.php
+  final String url; // ej: http://192.168.3.7/php/cambiar_password.php
 
   @override
   State<ChangePasswordWebViewScreen> createState() =>

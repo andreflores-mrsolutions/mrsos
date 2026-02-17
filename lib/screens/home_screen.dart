@@ -9,6 +9,7 @@ import 'package:mrsos/screens/ticket_detail_screen.dart';
 import 'package:mrsos/screens/tickets_sedes_screen.dart';
 import 'package:mrsos/screens/user_profile_screen.dart';
 import 'package:mrsos/screens/usuarios_list_screen.dart';
+import 'package:mrsos/services/push_router.dart';
 import 'package:mrsos/services/session_store.dart';
 import '../services/app_http.dart';
 import '../services/index_service.dart';
@@ -39,6 +40,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    PushRouter.openIfAny();
 
     _tabs = [
       HomeTab(usId: widget.usId, userName: widget.userName),
@@ -85,8 +87,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           MaterialPageRoute(
                             builder:
                                 (_) => CreateTicketScreen(
-                                  baseUrl:
-                                      'https://yellow-chicken-910471.hostingersite.com/php',
+                                  baseUrl: 'http://192.168.3.7/php',
                                 ),
                           ),
                         );
@@ -101,8 +102,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           MaterialPageRoute(
                             builder:
                                 (_) => HealthCheckScreen(
-                                  baseUrl:
-                                      'https://yellow-chicken-910471.hostingersite.com/php',
+                                  baseUrl: 'http://192.168.3.7/php',
                                 ),
                           ),
                         );
@@ -240,8 +240,7 @@ class _HomeTabState extends State<HomeTab> {
 
       if (avatar.isEmpty) avatar = 'avatar_default';
 
-      final avatarUrl =
-          'https://yellow-chicken-910471.hostingersite.com/img/Usuario/$avatar.jpg';
+      final avatarUrl = 'http://192.168.3.7/img/Usuario/$avatar.jpg';
       if (!mounted) return;
       setState(() => _avatarUrl = avatarUrl);
 
@@ -460,8 +459,7 @@ class _HomeTabState extends State<HomeTab> {
                               MaterialPageRoute(
                                 builder:
                                     (_) => HealthCheckDetailScreen(
-                                      baseUrl:
-                                          'https://yellow-chicken-910471.hostingersite.com/php',
+                                      baseUrl: 'http://192.168.3.7/php',
                                       hcId: _toInt(hc['hcId']),
                                       hcFolio:
                                           'HC - INE - ${_toInt(hc['hcId'])}', // o si tú guardas INE-12 real, pásalo
@@ -783,8 +781,7 @@ class _TopHeader extends StatelessWidget {
                       MaterialPageRoute(
                         builder:
                             (_) => UserProfileScreen(
-                              baseUrl:
-                                  'https://yellow-chicken-910471.hostingersite.com/php',
+                              baseUrl: 'http://192.168.3.7/php',
                             ),
                       ),
                     );

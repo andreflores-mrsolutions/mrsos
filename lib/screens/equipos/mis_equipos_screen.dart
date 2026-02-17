@@ -418,7 +418,7 @@ class _PolizaSection extends StatelessWidget {
                   .join(', ');
 
               // URLs (mismo patrón de tu servidor)
-              const base = 'https://yellow-chicken-910471.hostingersite.com';
+              const base = 'http://192.168.3.7';
               final marcaEnc = Uri.encodeComponent(marca);
               final modeloEnc = Uri.encodeComponent(modelo);
 

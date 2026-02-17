@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "150961179259",
+    "project_id": "mrsos-31341",
+    "storage_bucket": "mrsos-31341.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:150961179259:android:41485cf79d95170616f0de",
+        "android_client_info": {
+          "package_name": "com.example.mrsos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBldDhQTtf-Tn_52kLnllT3R36JNogyAuQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,8 +6,7 @@ class DioClient {
   DioClient(String baseUrl)
     : dio = Dio(
         BaseOptions(
-          baseUrl:
-              baseUrl, // ej: https://yellow-chicken-910471.hostingersite.com/php
+          baseUrl: baseUrl, // ej: http://192.168.3.7/php
           connectTimeout: const Duration(seconds: 20),
           receiveTimeout: const Duration(seconds: 20),
           headers: const {'Accept': 'application/json'},

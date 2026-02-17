@@ -102,12 +102,12 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
     // Nota: tu servidor usa espacios y carpetas; mejor encode para que no truene.
     final m = marca;
     final mo = modelo;
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Equipos/$m/$mo.png';
+    return 'http://192.168.3.7/img/Equipos/$m/$mo.png';
   }
 
   String _imgMarca(String marca) {
     final m = marca;
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Marcas/$m.png';
+    return 'http://192.168.3.7/img/Marcas/$m.png';
   }
 
   String _formatFecha(dynamic v) {

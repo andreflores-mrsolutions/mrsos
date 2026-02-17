@@ -8,8 +8,7 @@ import 'change_password_webview.dart'; // reutilízalo para WebView genérico (o
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key, required this.baseUrl});
-  final String
-  baseUrl; // ej: https://yellow-chicken-910471.hostingersite.com/php
+  final String baseUrl; // ej: http://192.168.3.7/php
 
   @override
   State<CreateTicketScreen> createState() => _CreateTicketScreenState();
@@ -166,9 +165,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             : ' ${_selectedEquipo?['eqVersion']}'.toString());
 
     final url =
-        Uri.parse(
-          'https://yellow-chicken-910471.hostingersite.com/dashboard/ayuda_logs.php',
-        ).replace(queryParameters: {'marca': marca, 'modelo': modelo}).toString();
+        Uri.parse('http://192.168.3.7/dashboard/ayuda_logs.php')
+            .replace(queryParameters: {'marca': marca, 'modelo': modelo})
+            .toString();
 
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ChangePasswordWebViewScreen(url: url)),

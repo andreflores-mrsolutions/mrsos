@@ -64,12 +64,12 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
   String _imgEquipo(String marca, String modelo) {
     final m = Uri.encodeComponent(marca);
     final mo = Uri.encodeComponent(modelo);
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Equipos/$m/$mo.png';
+    return 'http://192.168.3.7/img/Equipos/$m/$mo.png';
   }
 
   String _imgMarca(String marca) {
     final m = Uri.encodeComponent(marca);
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Marcas/$m.png';
+    return 'http://192.168.3.7/img/Marcas/$m.png';
   }
 
   Color _critColor(dynamic c) {

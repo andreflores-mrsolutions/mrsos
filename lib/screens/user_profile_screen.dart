@@ -19,7 +19,7 @@ import 'change_password_webview.dart';
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
     super.key,
-    required this.baseUrl, // ej: https://yellow-chicken-910471.hostingersite.com/php  (mismo host)
+    required this.baseUrl, // ej: http://192.168.3.7/php  (mismo host)
   });
 
   final String baseUrl;
@@ -112,18 +112,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     print(usImagen);
     // Si tu BD pone "0" cuando no hay imagen, lo tratamos como vacío
     if (usImagen.isEmpty || usImagen == '0') {
-      return 'https://yellow-chicken-910471.hostingersite.com/img/Usuario/avatar_default.jpg';
+      return 'http://192.168.3.7/img/Usuario/avatar_default.jpg';
     }
 
     // Si ya guardas filename en usImagen, úsalo.
     // Si no confías, puedes forzar por username.jpg como estabas haciendo.
     // Preferencia: usar filename real si existe:
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Usuario/$usUsername.jpg';
+    return 'http://192.168.3.7/img/Usuario/$usUsername.jpg';
   }
 
   String get brandFallbackAvatarByUsername {
     // fallback si tu backend siempre guarda por username.jpg
-    return 'https://yellow-chicken-910471.hostingersite.com/img/Usuario/$usUsername.jpg';
+    return 'http://192.168.3.7/img/Usuario/$usUsername.jpg';
   }
 
   Future<void> _pickAvatar() async {

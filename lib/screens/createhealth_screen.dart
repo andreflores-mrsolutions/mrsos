@@ -6,7 +6,7 @@ import 'package:mrsos/services/app_http.dart'; // tu singleton dio
 
 class HealthCheckScreen extends StatefulWidget {
   const HealthCheckScreen({super.key, required this.baseUrl});
-  final String baseUrl; // https://yellow-chicken-910471.hostingersite.com/php
+  final String baseUrl; // http://192.168.3.7/php
 
   @override
   State<HealthCheckScreen> createState() => _HealthCheckScreenState();

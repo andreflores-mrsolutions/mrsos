@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:mrsos/main.dart';
+import 'package:mrsos/services/push_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mrsos/screens/login_screen.dart';
@@ -83,11 +85,18 @@ class _WelcomeMRSOSScreenState extends State<WelcomeMRSOSScreen> {
       final userName = (await SessionStore.userName()) ?? 'Usuario';
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
+
+      // ✅ Navega al Home (sin .then)
+      navigatorKey.currentState?.pushReplacement(
         MaterialPageRoute(
           builder: (_) => HomeDashboardScreen(usId: usId, userName: userName),
         ),
       );
+
+      // ✅ (Opcional) si quieres forzar abrir push justo después:
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PushRouter.openIfAny();
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }

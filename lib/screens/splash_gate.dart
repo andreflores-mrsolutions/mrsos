@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mrsos/main.dart';
+import 'package:mrsos/services/push_router.dart';
 import 'package:video_player/video_player.dart';
 
 import 'welcome_screen.dart';
@@ -17,7 +19,6 @@ class _SplashGateState extends State<SplashGate> {
   @override
   void initState() {
     super.initState();
-
     _controller = VideoPlayerController.asset('assets/video/mi_splash.mp4')
       ..initialize().then((_) {
         if (!mounted) return;
