@@ -377,12 +377,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }) {
     final m = Uri.encodeComponent(marca.trim());
     final mod = Uri.encodeComponent(modeloSinVersion.trim());
-    return 'http://192.168.3.7/img/Equipos/$m/$mod.png';
+    return 'https://mrsos.com.mx/img/Equipos/$m/$mod.png';
   }
 
   String _brandUrl(String marca) {
     final m = Uri.encodeComponent(marca.trim());
-    return 'http://192.168.3.7/img/Marcas/$m.png';
+    return 'https://mrsos.com.mx/img/Marcas/$m.png';
   }
 
   @override

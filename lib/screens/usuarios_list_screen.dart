@@ -485,7 +485,7 @@ class _UserCard extends StatelessWidget {
 
     // si tu backend guarda en /img/Usuario/<archivo>
     final avatarUrl =
-        avatar.isEmpty ? '' : 'http://192.168.3.7/img/Usuario/$avatar.jpg';
+        avatar.isEmpty ? '' : 'https://mrsos.com.mx/img/Usuario/$avatar.jpg';
     print(avatarUrl);
 
     return GestureDetector(

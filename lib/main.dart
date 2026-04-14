@@ -35,7 +35,7 @@ Future<void> main() async {
     PushRouter.capture(initialMessage);
   }
 
-  await AppHttp.init(baseUrl: 'http://192.168.3.7/php');
+  await AppHttp.init(baseUrl: 'https://mrsos.com.mx/php');
 
   runApp(const MrSosApp());
 }

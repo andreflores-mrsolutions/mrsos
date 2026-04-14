@@ -39,7 +39,7 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
   String get _helpUrl {
     final marca = Uri.encodeComponent(_s(widget.marca));
     final modelo = Uri.encodeComponent(_s(widget.modelo));
-    return 'http://192.168.3.7/ayuda/ayuda_logs.php?marca=$marca&modelo=$modelo';
+    return 'https://mrsos.com.mx/ayuda/ayuda_logs.php?marca=$marca&modelo=$modelo';
   }
 
   Future<void> _pickFiles() async {

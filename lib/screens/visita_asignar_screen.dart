@@ -30,7 +30,7 @@ class _VisitaAsignarScreenState extends State<VisitaAsignarScreen> {
   bool _saving = false;
 
   String _s(dynamic v) => (v ?? '').toString();
-  static const _host = 'http://192.168.3.7';
+  static const _host = 'https://mrsos.com.mx';
 
   String _urlIngSvg(int usIdIng) => '$_host/img/Ingeniero/$usIdIng.svg';
 

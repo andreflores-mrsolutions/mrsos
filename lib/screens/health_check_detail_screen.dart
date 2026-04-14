@@ -6,7 +6,7 @@ import '../widget/mr_skeleton.dart';
 class HealthCheckDetailScreen extends StatefulWidget {
   const HealthCheckDetailScreen({
     super.key,
-    required this.baseUrl, // http://192.168.3.7/php
+    required this.baseUrl, // https://mrsos.com.mx/php
     required this.hcId,
     required this.hcFolio, // "HC - INE - 12"
   });
@@ -65,7 +65,7 @@ class _HealthCheckDetailScreenState extends State<HealthCheckDetailScreen> {
   int _toInt(dynamic v) => int.tryParse('$v') ?? 0;
 
   String _equipImageUrl(String marca, String modelo, String version) {
-    // http://192.168.3.7/img/Equipos/<marca>/<modelo sin version>.png
+    // https://mrsos.com.mx/img/Equipos/<marca>/<modelo sin version>.png
     // Tú dijiste: "metemos marcar aqui/modelo aqui sin version.png"
     final host = widget.baseUrl.replaceAll('/php', '');
     final m = Uri.encodeComponent(marca.trim());

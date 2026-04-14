@@ -15,6 +15,26 @@ import '../services/app_http.dart';
 import '../services/index_service.dart';
 import '../widget/mr_skeleton.dart';
 
+class MRSColors {
+  static const Color primary = Color(0xFF200F4C);
+  static const Color primaryDark = Color(0xFF160A38);
+  static const Color accent = Color(0xFF1F6FFF);
+  static const Color bg = Color(0xFFF5F7FB);
+  static const Color surface = Colors.white;
+  static const Color soft = Color(0xFFF6F7FB);
+  static const Color border = Color(0x140F172A);
+  static const Color text = Color(0xFF0F172A);
+  static const Color muted = Color(0xFF64748B);
+  static const Color successBg = Color(0xFFDCFCE7);
+  static const Color successText = Color(0xFF166534);
+  static const Color warningBg = Color(0xFFFFF7ED);
+  static const Color warningText = Color(0xFFC2410C);
+  static const Color dangerBg = Color(0xFFFEF2F2);
+  static const Color dangerText = Color(0xFFB91C1C);
+  static const Color infoBg = Color(0xFFEFF6FF);
+  static const Color infoText = Color(0xFF1D4ED8);
+}
+
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
     super.key,
@@ -30,11 +50,7 @@ class HomeDashboardScreen extends StatefulWidget {
 }
 
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
-  static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-
   int _tabIndex = 0;
-
-  // ✅ Tabs (NO Navigator.push)
   late final List<Widget> _tabs;
 
   @override
@@ -44,9 +60,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
     _tabs = [
       HomeTab(usId: widget.usId, userName: widget.userName),
-      // ✅ MIS EQUIPOS (2do botón)
       const MisEquiposTab(),
-      // placeholders (los cambiamos después)
       const ReportesTab(),
       const UsuariosTab(),
     ];
@@ -67,11 +81,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Color(0x140F172A),
                       blurRadius: 18,
-                      offset: const Offset(0, 10),
+                      offset: Offset(0, 10),
                     ),
                   ],
                 ),
@@ -79,7 +93,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.add_circle_outline),
+                      leading: const Icon(
+                        Icons.add_circle_outline,
+                        color: MRSColors.primary,
+                      ),
                       title: const Text('Ticket Servicio'),
                       onTap: () {
                         Navigator.pop(context);
@@ -87,14 +104,17 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           MaterialPageRoute(
                             builder:
                                 (_) => CreateTicketScreen(
-                                  baseUrl: 'http://192.168.3.7/php',
+                                  baseUrl: 'https://mrsos.com.mx/php',
                                 ),
                           ),
                         );
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.health_and_safety_outlined),
+                      leading: const Icon(
+                        Icons.health_and_safety_outlined,
+                        color: MRSColors.primary,
+                      ),
                       title: const Text('Health Check'),
                       onTap: () {
                         Navigator.pop(context);
@@ -102,7 +122,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                           MaterialPageRoute(
                             builder:
                                 (_) => HealthCheckScreen(
-                                  baseUrl: 'http://192.168.3.7/php',
+                                  baseUrl: 'https://mrsos.com.mx/php',
                                 ),
                           ),
                         );
@@ -123,20 +143,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      // ✅ Body cambia por tab (sin navegar)
+      backgroundColor: MRSColors.bg,
       body: IndexedStack(index: _tabIndex, children: _tabs),
-
       floatingActionButton: FloatingActionButton(
         onPressed: _openFabMenu,
-        backgroundColor: mrPurple,
+        backgroundColor: MRSColors.primary,
         foregroundColor: Colors.white,
         elevation: 8,
         child: const Icon(Icons.add_rounded),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
       bottomNavigationBar: _BottomBar(activeIndex: _tabIndex, onTap: _onTab),
     );
   }
@@ -148,8 +164,6 @@ class _BottomBar extends StatelessWidget {
   final int activeIndex;
   final ValueChanged<int> onTap;
 
-  static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-
   Widget _btn({required int index, required IconData icon}) {
     final active = activeIndex == index;
     return InkWell(
@@ -160,7 +174,7 @@ class _BottomBar extends StatelessWidget {
         child: Icon(
           icon,
           size: 26,
-          color: active ? mrPurple : const Color(0xFFB8B6C6),
+          color: active ? MRSColors.primary : const Color(0xFF94A3B8),
         ),
       ),
     );
@@ -172,7 +186,7 @@ class _BottomBar extends StatelessWidget {
       height: 74,
       color: Colors.white,
       elevation: 10,
-      shadowColor: Colors.black.withOpacity(0.08),
+      shadowColor: const Color(0x120F172A),
       shape: const CircularNotchedRectangle(),
       notchMargin: 10,
       child: Padding(
@@ -181,27 +195,12 @@ class _BottomBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _btn(index: 0, icon: Icons.home_rounded),
-            // ✅ 2do botón = Mis Equipos (cambia icono como pediste)
             _btn(index: 1, icon: Icons.computer_rounded),
             const SizedBox(width: 44),
             _btn(index: 2, icon: Icons.description_rounded),
             _btn(index: 3, icon: Icons.group_rounded),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
       ),
     );
   }
@@ -218,42 +217,10 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  static const Color cardPurple = Color.fromARGB(255, 8, 4, 247);
-
   late final IndexService api;
 
   String _avatarUrl = '';
-
-  Future<void> _loadProfile() async {
-    try {
-      final u = await SessionStore().getProfile();
-
-      // Basado en otras pantallas: si usImagen == '1' => usar username, si no => avatar_default
-      String avatar = (u['usUsername'] ?? '').toString();
-      final flag = (u['usImagen'] ?? '').toString();
-
-      if (flag == '1') {
-        avatar = (u['usUsername'] ?? '').toString();
-      } else {
-        avatar = 'avatar_default';
-      }
-
-      if (avatar.isEmpty) avatar = 'avatar_default';
-
-      final avatarUrl = 'http://192.168.3.7/img/Usuario/$avatar.jpg';
-      if (!mounted) return;
-      setState(() => _avatarUrl = avatarUrl);
-
-      // debug
-      // ignore: avoid_print
-      print(avatarUrl);
-    } catch (_) {
-      // si falla, dejamos el avatar por default
-    }
-  }
-
   bool _loading = true;
-  // ignore: unused_field
   bool _refreshing = false;
 
   Map<String, dynamic> indexData = {};
@@ -263,18 +230,34 @@ class _HomeTabState extends State<HomeTab> {
   @override
   void initState() {
     super.initState();
-    api = IndexService(dio: AppHttp.I.dio); // misma cookie PHPSESSID
+    api = IndexService(dio: AppHttp.I.dio);
     _loadAll();
     _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final u = await SessionStore().getProfile();
+      String avatar = (u['usUsername'] ?? '').toString();
+      final flag = (u['usImagen'] ?? '').toString();
+
+      if (flag != '1') {
+        avatar = 'avatar_default';
+      }
+      if (avatar.isEmpty) avatar = 'avatar_default';
+
+      final avatarUrl = 'https://mrsos.com.mx/img/Usuario/$avatar.jpg';
+      if (!mounted) return;
+      setState(() => _avatarUrl = avatarUrl);
+    } catch (_) {}
   }
 
   Future<void> _loadAll() async {
     setState(() => _loading = true);
     try {
-      final a = await api.getIndexData(); // getIndexData.php (sesión)
-      final b = await api.estadisticasMes(); // estadisticas_mes.php (sesión)
-      final c =
-          await api.obtenerTicketsSedes(); // obtener_tickets_sedes.php (sesión)
+      final a = await api.getIndexData();
+      final b = await api.estadisticasMes();
+      final c = await api.obtenerTicketsSedes();
 
       if (!mounted) return;
       setState(() {
@@ -301,7 +284,6 @@ class _HomeTabState extends State<HomeTab> {
         );
         return;
       }
-      // otros errores...
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
@@ -310,14 +292,24 @@ class _HomeTabState extends State<HomeTab> {
   @override
   Widget build(BuildContext context) {
     final progresoItems =
-        _loading ? <Map<String, dynamic>>[] : _ticketsEnProgreso(indexData);
+        _loading
+            ? <Map<String, dynamic>>[]
+            : _ticketsEnProgresoEnriquecidos(indexData, ticketsSedes);
+
     final int healthCount =
         _loading ? 0 : _safeInt(indexData['healthChecksCount'] ?? 0);
+
+    final int totalTickets =
+        _loading ? 0 : _safeList(indexData, 'tickets').length;
+    final int abiertos =
+        _loading ? 0 : _safeInt(indexData['ticketsAbiertos'] ?? totalTickets);
+    final int accion = _loading ? 0 : _countActionRequired(progresoItems);
+    final int curso = _loading ? 0 : progresoItems.length;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBody: false,
-      backgroundColor: Colors.white,
+      backgroundColor: MRSColors.bg,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
@@ -333,12 +325,20 @@ class _HomeTabState extends State<HomeTab> {
                 loading: _loading,
                 avatarUrl: _avatarUrl,
               ),
-              const SizedBox(height: 14),
-
+              const SizedBox(height: 16),
+              MRSkeleton(
+                enabled: _loading,
+                child: _KpiGrid(
+                  total: totalTickets,
+                  abiertos: abiertos,
+                  accion: accion,
+                  curso: curso,
+                ),
+              ),
+              const SizedBox(height: 16),
               MRSkeleton(
                 enabled: _loading,
                 child: _MainCard(
-                  progress: _loading ? 0.0 : _safeProgressFromRatio(stats),
                   onTickets: () {
                     Navigator.push(
                       context,
@@ -353,14 +353,20 @@ class _HomeTabState extends State<HomeTab> {
                   },
                   ticketsAbiertos:
                       _loading ? null : _safeInt(indexData['ticketsAbiertos']),
-                  poliza: _loading ? null : (indexData['poliza']?.toString()),
+                  poliza: _loading ? null : indexData['poliza']?.toString(),
+                  enCurso: curso,
+                  miAccion: accion,
                 ),
               ),
-              const SizedBox(height: 30),
-
-              if (_loading) ...[
+              const SizedBox(height: 28),
+              if (healthCount > 0 || _loading) ...[
+                _SectionHeader(
+                  title: 'Health Check',
+                  count: _loading ? 0 : healthCount,
+                ),
+                const SizedBox(height: 14),
                 SizedBox(
-                  height: 96,
+                  height: 142,
                   child: MRSkeleton(
                     enabled: _loading,
                     child: ListView.separated(
@@ -369,100 +375,32 @@ class _HomeTabState extends State<HomeTab> {
                           _loading
                               ? 2
                               : _safeList(indexData, 'healthChecks').length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
                       itemBuilder: (_, i) {
                         if (_loading) {
-                          return const _HealthCheckMiniCardSkeleton();
+                          return const _HealthAgendaCardSkeleton();
                         }
-
                         final hc =
                             _safeList(indexData, 'healthChecks')[i]
                                 as Map<String, dynamic>;
-                        return _HealthCheckMiniCard(
+                        return _HealthAgendaCard(
                           sede: '${hc['csNombre'] ?? 'Sede'}',
-                          fechaHora: '${hc['hcFechaHora'] ?? ''}',
+                          fechaHora: _prettyDateTime(
+                            '${hc['hcFechaHora'] ?? ''}',
+                          ),
                           equipos: _toInt(hc['equiposCount'] ?? 0),
-                          duracionMins: _toInt(hc['hcDuracionMins'] ?? 0),
+                          duracionTexto: _durationTextFromMinutes(
+                            _toInt(hc['hcDuracionMins'] ?? 0),
+                          ),
                           onTap: () {
-                            // luego lo conectamos al detalle del HC
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-              ],
-              if (healthCount > 0) ...[
-                Row(
-                  children: [
-                    const Text(
-                      'Health Check',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 230, 232, 255),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _loading
-                            ? '•'
-                            : '${_safeInt(indexData['healthChecksCount'] ?? 0)}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: cardPurple,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  height: 96,
-                  child: MRSkeleton(
-                    enabled: _loading,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount:
-                          _loading
-                              ? 2
-                              : _safeList(indexData, 'healthChecks').length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (_, i) {
-                        if (_loading) {
-                          return const _HealthCheckMiniCardSkeleton();
-                        }
-
-                        final hc =
-                            _safeList(indexData, 'healthChecks')[i]
-                                as Map<String, dynamic>;
-                        return _HealthCheckMiniCard(
-                          sede: '${hc['csNombre'] ?? 'Sede'}',
-                          fechaHora: '${hc['hcFechaHora'] ?? ''}',
-                          equipos: _toInt(hc['equiposCount'] ?? 0),
-                          duracionMins: _toInt(hc['hcDuracionMins'] ?? 0),
-                          onTap: () {
-                            print('abrir HC ${_toInt(hc['hcId'])}');
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder:
                                     (_) => HealthCheckDetailScreen(
-                                      baseUrl: 'http://192.168.3.7/php',
+                                      baseUrl: 'https://mrsos.com.mx/php',
                                       hcId: _toInt(hc['hcId']),
                                       hcFolio:
-                                          'HC - INE - ${_toInt(hc['hcId'])}', // o si tú guardas INE-12 real, pásalo
+                                          'HC - INE - ${_toInt(hc['hcId'])}',
                                     ),
                               ),
                             );
@@ -472,65 +410,30 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
               ],
-
-              // En progreso (ahora desde getIndexData.php -> "tickets")
-              Row(
-                children: [
-                  const Text(
-                    'En Progreso',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 230, 232, 255),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _loading ? '•' : '${progresoItems.length}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: cardPurple,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (!_loading)
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => TicketsSedesScreen(
-                                  usId: widget.usId,
-                                  userName: widget.userName,
-                                ),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Ver todo',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: cardPurple,
-                        ),
-                      ),
-                    ),
-                ],
+              _SectionHeader(
+                title: 'En Progreso',
+                count: _loading ? 0 : progresoItems.length,
+                onViewAll:
+                    _loading
+                        ? null
+                        : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => TicketsSedesScreen(
+                                    usId: widget.usId,
+                                    userName: widget.userName,
+                                  ),
+                            ),
+                          );
+                        },
               ),
-
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 14),
               SizedBox(
-                height: 128,
+                height: 336,
                 child: MRSkeleton(
                   enabled: _loading,
                   child: ListView.separated(
@@ -541,22 +444,49 @@ class _HomeTabState extends State<HomeTab> {
                             : (progresoItems.isEmpty
                                 ? 1
                                 : progresoItems.length),
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, __) => const SizedBox(width: 14),
                     itemBuilder: (_, i) {
-                      if (_loading) return const _ProgressMiniCardSkeleton();
+                      if (_loading) return const _TicketHeroCardSkeleton();
 
                       if (progresoItems.isEmpty) {
-                        return const _EmptyMiniCard();
+                        return Container(
+                          width: 292,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: MRSColors.border),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Sin tickets por ahora',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: MRSColors.muted,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        );
                       }
 
                       final item = progresoItems[i];
-                      final tiId = item['folio']?.toString() ?? '--';
                       final tiIdNum = _safeInt(item['tiId']);
-                      final desc = (item['peSN'] ?? '').toString();
                       final crit = (item['tiNivelCriticidad'] ?? '').toString();
-                      final proc = (item['tiProceso'] ?? '').toString();
 
-                      return GestureDetector(
+                      return _TicketHeroCard(
+                        folio: (item['folio'] ?? '--').toString(),
+                        equipo: _ticketEquipmentName(item),
+                        marcaVersion: _ticketBrandVersion(item),
+                        sn: _ticketSerial(item),
+                        sede: _ticketSite(item),
+                        pasoActual: _ticketPasoActual(item),
+                        progress: _fakePercentByCrit(crit),
+                        progressText: _progressTextFromCrit(crit),
+                        estado: _ticketEstadoLabel(item),
+                        criticidad: _ticketCriticidadLabel(
+                          item['tiNivelCriticidad'],
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -570,58 +500,32 @@ class _HomeTabState extends State<HomeTab> {
                             ),
                           );
                         },
-                        child: _ProgressMiniCard(
-                          folio: tiId,
-                          status: crit.isEmpty ? 'En proceso' : proc,
-                          sn: desc.isEmpty ? 'Sin descripción' : desc,
-                          percent: _fakePercentByCrit(crit),
-                        ),
                       );
                     },
                   ),
                 ),
               ),
-
-              const SizedBox(height: 18),
-
-              // Grupos / Sedes (ahora usa csNombre y tickets.length)
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Grupos/Sedes',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  if (!_loading)
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => TicketsSedesScreen(
-                                  usId: widget.usId,
-                                  userName: widget.userName,
-                                ),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Ver todo',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: cardPurple,
-                        ),
-                      ),
-                    ),
-                ],
+              const SizedBox(height: 22),
+              _SectionHeader(
+                title: 'Grupos/Sedes',
+                count: _loading ? 0 : _safeList(ticketsSedes, 'sedes').length,
+                onViewAll:
+                    _loading
+                        ? null
+                        : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => TicketsSedesScreen(
+                                    usId: widget.usId,
+                                    userName: widget.userName,
+                                  ),
+                            ),
+                          );
+                        },
               ),
-              const SizedBox(height: 6),
-
+              const SizedBox(height: 10),
               MRSkeleton(
                 enabled: _loading,
                 child: Column(
@@ -640,8 +544,6 @@ class _HomeTabState extends State<HomeTab> {
                               : const [];
                       final count = tickets.length;
 
-                      final csId = _safeInt(sede['csId']);
-
                       return _SedeRow(
                         onTap: () {
                           final csId = _safeInt(sede['csId']);
@@ -658,15 +560,9 @@ class _HomeTabState extends State<HomeTab> {
                           );
                         },
                         title: csNombre,
-                        subtitle: '$count Tickets',
-                        iconBg:
-                            i % 2 == 0
-                                ? const Color(0xFFFFE6F2)
-                                : const Color.fromARGB(255, 230, 232, 255),
-                        icon:
-                            i % 2 == 0
-                                ? Icons.inventory_2_outlined
-                                : Icons.apartment_rounded,
+                        subtitle: '$count ticket(s)',
+                        iconBg: const Color(0xFFEFF6FF),
+                        icon: Icons.apartment_rounded,
                       );
                     },
                   ),
@@ -679,7 +575,6 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  // ---------- helpers de data ----------
   int _safeInt(dynamic v, {int fallback = 0}) {
     if (v == null) return fallback;
     if (v is int) return v;
@@ -692,46 +587,156 @@ class _HomeTabState extends State<HomeTab> {
     return [];
   }
 
-  // getIndexData.php devuelve: tickets[] con tiId, tiDescripcion, tiFechaCreacion, tiNivelCriticidad
-  List<Map<String, dynamic>> _ticketsEnProgreso(Map<String, dynamic> index) {
+  List<Map<String, dynamic>> _ticketsEnProgresoEnriquecidos(
+    Map<String, dynamic> index,
+    Map<String, dynamic> sedesData,
+  ) {
     final raw = index['tickets'];
     if (raw is! List) return [];
-    final items =
-        raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
 
-    // Si quieres: filtra por criticidad o por fecha
-    // por ahora: top 6 recientes
+    final Map<int, Map<String, dynamic>> extrasById = {};
+    final sedes = _safeList(sedesData, 'sedes');
+    for (final sede in sedes) {
+      if (sede is Map && sede['tickets'] is List) {
+        for (final t in sede['tickets']) {
+          if (t is Map) {
+            final map = Map<String, dynamic>.from(t);
+            final id = _safeInt(map['tiId']);
+            if (id > 0) extrasById[id] = map;
+          }
+        }
+      }
+    }
+
+    final items =
+        raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).map((
+          item,
+        ) {
+          final id = _safeInt(item['tiId']);
+          final extra = extrasById[id] ?? const <String, dynamic>{};
+          return <String, dynamic>{...extra, ...item};
+        }).toList();
+
     return items.take(6).toList();
   }
 
-  // estadisticas_mes.php devuelve ratio: {finalizados,total}
-  double _safeProgressFromRatio(Map<String, dynamic> s) {
-    final ratio = s['ratio'];
-    if (ratio is Map) {
-      final r = Map<String, dynamic>.from(ratio);
-      final fin = _safeInt(r['finalizados']);
-      final tot = _safeInt(r['total']);
-
-      if (tot <= 0) return -1.0; // sin datos
-      return (fin / tot).clamp(0.0, 1.0);
-    }
-    return -1.0; // sin datos
+  int _countActionRequired(List<Map<String, dynamic>> items) {
+    return items.where((item) {
+      final proc = (item['tiProceso'] ?? '').toString().toLowerCase();
+      return proc.contains('logs') ||
+          proc.contains('meet') ||
+          proc.contains('visita') ||
+          proc.contains('encuesta');
+    }).length;
   }
 
-  // Solo para que se vea bonito el avance en mini-cards (hasta que definamos un campo real de avance)
+  String _ticketEquipmentName(Map<String, dynamic> item) {
+    final candidates = [
+      item['eqModelo'],
+      item['equipo'],
+      item['eqNombre'],
+      item['peEquipo'],
+      item['tiEquipo'],
+      item['tiDescripcion'],
+      item['descripcion'],
+      item['titulo'],
+    ];
+    for (final c in candidates) {
+      final s = (c ?? '').toString().trim();
+      if (s.isNotEmpty) return s;
+    }
+    return 'Equipo registrado';
+  }
+
+  String _ticketBrandVersion(Map<String, dynamic> item) {
+    final parts =
+        [
+          (item['maNombre'] ?? '').toString().trim(),
+          (item['eqVersion'] ?? '').toString().trim(),
+        ].where((e) => e.isNotEmpty).toList();
+
+    if (parts.isEmpty) return 'Activo en seguimiento';
+    return parts.join(' ');
+  }
+
+  String _ticketSerial(Map<String, dynamic> item) {
+    final candidates = [
+      item['peSN'],
+      item['serialNumber'],
+      item['serial'],
+      item['sn'],
+      item['tiSerial'],
+    ];
+    for (final c in candidates) {
+      final s = (c ?? '').toString().trim();
+      if (s.isNotEmpty) return s;
+    }
+    return 'Sin SN';
+  }
+
+  String _ticketSite(Map<String, dynamic> item) {
+    final candidates = [item['csNombre'], item['sede'], item['zona']];
+    for (final c in candidates) {
+      final s = (c ?? '').toString().trim();
+      if (s.isNotEmpty) return s;
+    }
+    return 'Sede principal';
+  }
+
+  String _ticketPasoActual(Map<String, dynamic> item) {
+    final s = (item['tiProceso'] ?? '').toString().trim();
+    return s.isEmpty ? 'Sin proceso' : s;
+  }
+
+  String _ticketEstadoLabel(Map<String, dynamic> item) {
+    final proc = (item['tiProceso'] ?? '').toString().toLowerCase();
+    if (proc.contains('logs') ||
+        proc.contains('meet') ||
+        proc.contains('visita') ||
+        proc.contains('encuesta')) {
+      return 'En curso';
+    }
+    return 'Abierto';
+  }
+
+  String _ticketCriticidadLabel(dynamic value) {
+    final n = _safeInt(value, fallback: 3);
+    return 'Nivel $n';
+  }
+
+  String _progressTextFromCrit(String crit) {
+    final c = crit.toLowerCase();
+    if (c.contains('1')) return 'Alta';
+    if (c.contains('2')) return 'Media';
+    if (c.contains('3')) return 'Base';
+    return 'Activa';
+  }
+
+  String _durationTextFromMinutes(int mins) {
+    if (mins <= 0) return 'Sin duración';
+    if (mins < 60) return '${mins} min';
+    final h = mins ~/ 60;
+    final r = mins % 60;
+    return r == 0 ? '${h}h' : '${h}h ${r}m';
+  }
+
+  String _prettyDateTime(String s) {
+    if (s.length < 16) return s;
+    return '${s.substring(0, 10)} · ${s.substring(11, 16)}';
+  }
+
   double _fakePercentByCrit(String crit) {
     final c = crit.toLowerCase();
     if (c.contains('1')) return 1.0;
-    if (c.contains('2')) return 0.5;
+    if (c.contains('2')) return 0.6;
     if (c.contains('3')) return 0.35;
     return 0.80;
   }
 }
 
-// ---------------- UI widgets ----------------
-
 class _TopHeader extends StatelessWidget {
   const _TopHeader({required this.name, required this.loading, this.avatarUrl});
+
   final String name;
   final bool loading;
   final String? avatarUrl;
@@ -740,181 +745,463 @@ class _TopHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasAvatar = (avatarUrl ?? '').isNotEmpty;
     final img = (!loading && hasAvatar) ? NetworkImage(avatarUrl!) : null;
-    return Row(
-      children: [
-        MRSkeleton(
-          enabled: loading,
-          child: CircleAvatar(
-            radius: 20,
-            backgroundColor: const Color.fromARGB(255, 230, 232, 255),
-            backgroundImage: img,
-            onBackgroundImageError: img == null ? null : (_, __) {},
-            child:
-                loading
-                    ? const SizedBox.shrink()
-                    : (hasAvatar
-                        ? const SizedBox.shrink()
-                        : const Icon(
-                          Icons.person_rounded,
-                          color: Color.fromARGB(255, 40, 22, 100),
-                        )),
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: MRSColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: MRSColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0F172A),
+            blurRadius: 20,
+            offset: Offset(0, 8),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '¡Hola',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF6B667A),
-                ),
-              ),
-              MRSkeleton(
-                enabled: loading,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder:
-                            (_) => UserProfileScreen(
-                              baseUrl: 'http://192.168.3.7/php',
-                            ),
+        ],
+      ),
+      child: Row(
+        children: [
+          MRSkeleton(
+            enabled: loading,
+            child: CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color(0xFFEAF0FF),
+              backgroundImage: img,
+              onBackgroundImageError: img == null ? null : (_, __) {},
+              child:
+                  hasAvatar
+                      ? const SizedBox.shrink()
+                      : const Icon(
+                        Icons.person_rounded,
+                        color: MRSColors.primary,
                       ),
-                    );
-                  },
-                  child: Text(
-                    name.isEmpty ? 'Usuario!' : "$name!",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: MRSkeleton(
+              enabled: loading,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: MRSColors.successText,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Cliente',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'MR SOS',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: MRSColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => UserProfileScreen(
+                                baseUrl: 'https://mrsos.com.mx/php',
+                              ),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      name.isEmpty ? 'Hola, Usuario' : 'Hola, $name',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: MRSColors.text,
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Mis tickets y acciones pendientes',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: MRSColors.muted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.notifications_none_rounded),
-        ),
+          Container(
+            decoration: BoxDecoration(
+              color: MRSColors.soft,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: MRSColors.border),
+            ),
+            child: IconButton(
+              onPressed: () {},
+              icon: const Icon(
+                Icons.notifications_none_rounded,
+                color: MRSColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KpiGrid extends StatelessWidget {
+  const _KpiGrid({
+    required this.total,
+    required this.abiertos,
+    required this.accion,
+    required this.curso,
+  });
+
+  final int total;
+  final int abiertos;
+  final int accion;
+  final int curso;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.75,
+      children: [
+        _KpiCard(label: 'Total', value: total),
+        _KpiCard(label: 'Abiertos', value: abiertos),
+        _KpiCard(label: 'Requieren mi acción', value: accion),
+        _KpiCard(label: 'En curso', value: curso),
       ],
+    );
+  }
+}
+
+class _KpiCard extends StatelessWidget {
+  const _KpiCard({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: MRSColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MRSColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: MRSColors.muted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: MRSColors.text,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _MainCard extends StatelessWidget {
   const _MainCard({
-    required this.progress,
     required this.onTickets,
     this.ticketsAbiertos,
     this.poliza,
+    required this.enCurso,
+    required this.miAccion,
   });
 
-  final double progress;
   final VoidCallback onTickets;
   final int? ticketsAbiertos;
   final String? poliza;
-
-  static const Color cardPurple = Color.fromARGB(255, 40, 22, 100);
+  final int enCurso;
+  final int miAccion;
 
   @override
   Widget build(BuildContext context) {
-    final bool hasData = progress >= 0.0 && progress <= 1.0;
-    final double? progressValue = hasData ? progress : null;
-
     final subt =
         (ticketsAbiertos == null || poliza == null)
-            ? 'Cargando…'
-            : 'Póliza: $poliza • Abiertos: $ticketsAbiertos';
+            ? 'Cargando información del servicio...'
+            : 'Póliza $poliza · $ticketsAbiertos ticket(s) abiertos';
 
     return Container(
-      height: 128,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: cardPurple,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF11B5FF), width: 2),
-        boxShadow: [
+        color: MRSColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: MRSColors.border),
+        boxShadow: const [
           BoxShadow(
-            color: cardPurple.withOpacity(0.22),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: Color(0x0A0F172A),
+            blurRadius: 24,
+            offset: Offset(0, 10),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Tus tickets al día',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subt,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(.92),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  height: 34,
-                  child: ElevatedButton(
-                    onPressed: onTickets,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: cardPurple,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Ver Tickets',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-              ],
+          const Text(
+            'Estado de servicio',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: MRSColors.text,
             ),
           ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 70,
-            height: 70,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: progressValue, // null => animado
-                  strokeWidth: 8,
-                  backgroundColor: Colors.white.withOpacity(0.25),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-                Text(
-                  hasData ? '${(progress * 100).round()}%' : '—',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
+          const SizedBox(height: 6),
+          Text(
+            subt,
+            style: const TextStyle(
+              fontSize: 13,
+              color: MRSColors.muted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 46,
+                  child: ElevatedButton.icon(
+                    onPressed: onTickets,
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text(
+                      'Ver tickets',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MRSColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: MRSColors.soft,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: MRSColors.border),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MiniMetric(
+                      label: 'En curso',
+                      value: '$enCurso',
+                      valueColor: MRSColors.primary,
+                    ),
+                    const SizedBox(height: 10),
+                    _MiniMetric(
+                      label: 'Mi acción',
+                      value: '$miAccion',
+                      valueColor: MRSColors.accent,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMetric extends StatelessWidget {
+  const _MiniMetric({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: MRSColors.muted,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    required this.count,
+    this.onViewAll,
+  });
+
+  final String title;
+  final int count;
+  final VoidCallback? onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: MRSColors.text,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: MRSColors.infoBg,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: MRSColors.infoText,
+            ),
+          ),
+        ),
+        const Spacer(),
+        if (onViewAll != null)
+          TextButton(
+            onPressed: onViewAll,
+            child: const Text(
+              'Ver todo',
+              style: TextStyle(
+                color: MRSColors.accent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SoftBadge extends StatelessWidget {
+  const _SoftBadge({required this.text, required this.bg, required this.fg});
+
+  final String text;
+  final Color bg;
+  final Color fg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: fg),
+      ),
+    );
+  }
+}
+
+class _SoftInfoChip extends StatelessWidget {
+  const _SoftInfoChip({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F8FC),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: MRSColors.muted),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: MRSColors.text,
             ),
           ),
         ],
@@ -923,141 +1210,444 @@ class _MainCard extends StatelessWidget {
   }
 }
 
-class _EmptyMiniCard extends StatelessWidget {
-  const _EmptyMiniCard();
+class _TicketHeroCard extends StatelessWidget {
+  const _TicketHeroCard({
+    required this.folio,
+    required this.equipo,
+    required this.marcaVersion,
+    required this.sn,
+    required this.sede,
+    required this.pasoActual,
+    required this.progress,
+    required this.progressText,
+    required this.estado,
+    required this.criticidad,
+    this.onTap,
+  });
+
+  final String folio;
+  final String equipo;
+  final String marcaVersion;
+  final String sn;
+  final String sede;
+  final String pasoActual;
+  final double progress;
+  final String progressText;
+  final String estado;
+  final String criticidad;
+  final VoidCallback? onTap;
+
+  Color _estadoBg() {
+    switch (estado.toLowerCase()) {
+      case 'abierto':
+        return MRSColors.successBg;
+      case 'en curso':
+        return MRSColors.infoBg;
+      case 'pospuesto':
+        return MRSColors.warningBg;
+      default:
+        return const Color(0xFFF1F5F9);
+    }
+  }
+
+  Color _estadoText() {
+    switch (estado.toLowerCase()) {
+      case 'abierto':
+        return MRSColors.successText;
+      case 'en curso':
+        return MRSColors.accent;
+      case 'pospuesto':
+        return MRSColors.warningText;
+      default:
+        return MRSColors.muted;
+    }
+  }
+
+  Color _criticidadBg() {
+    switch (criticidad.toLowerCase()) {
+      case 'nivel 1':
+        return MRSColors.dangerBg;
+      case 'nivel 2':
+        return MRSColors.warningBg;
+      case 'nivel 3':
+        return const Color(0xFFF1F5F9);
+      default:
+        return const Color(0xFFF1F5F9);
+    }
+  }
+
+  Color _criticidadText() {
+    switch (criticidad.toLowerCase()) {
+      case 'nivel 1':
+        return MRSColors.dangerText;
+      case 'nivel 2':
+        return MRSColors.warningText;
+      case 'nivel 3':
+        return const Color(0xFF475569);
+      default:
+        return MRSColors.muted;
+    }
+  }
+
+  Color _progressColor() {
+    if (progress >= 0.9) return const Color(0xFFDC2626);
+    if (progress >= 0.6) return const Color(0xFFF59E0B);
+    return MRSColors.accent;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 190,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FF),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Center(
-        child: Text(
-          'Sin tickets\npor ahora',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF6B667A),
-            fontWeight: FontWeight.w800,
-          ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(26),
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: MRSColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A0F172A),
+              blurRadius: 22,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    folio,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: MRSColors.primary,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+                _SoftBadge(text: estado, bg: _estadoBg(), fg: _estadoText()),
+                const SizedBox(width: 8),
+                _SoftBadge(
+                  text: criticidad,
+                  bg: _criticidadBg(),
+                  fg: _criticidadText(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              equipo,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 22,
+                height: 1.05,
+                fontWeight: FontWeight.w900,
+                color: MRSColors.text,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$marcaVersion · SN: $sn',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: MRSColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              sede,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: MRSColors.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Paso actual',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: MRSColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    pasoActual,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: MRSColors.text,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      minHeight: 8,
+                      backgroundColor: const Color(0xFFE8EDF5),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _progressColor(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  progressText,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: MRSColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Row(
+              children: [
+                Icon(
+                  Icons.arrow_outward_rounded,
+                  size: 18,
+                  color: MRSColors.accent,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Ver detalle',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: MRSColors.accent,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ProgressMiniCard extends StatelessWidget {
-  const _ProgressMiniCard({
-    required this.folio,
-    required this.status,
-    required this.sn,
-    required this.percent,
-  });
-
-  final String folio;
-  final String status;
-  final String sn;
-  final double percent;
+class _TicketHeroCardSkeleton extends StatelessWidget {
+  const _TicketHeroCardSkeleton();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 210,
-      padding: const EdgeInsets.all(14),
+      width: 300,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FF),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: MRSColors.border),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                folio,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF6B667A),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 230, 232, 255),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  size: 16,
-                  color: Color.fromARGB(255, 40, 20, 105),
-                ),
-              ),
+              SkeletonBox(height: 14, width: 70),
+              Spacer(),
+              SkeletonBox(height: 24, width: 64, radius: 999),
+              SizedBox(width: 8),
+              SkeletonBox(height: 24, width: 54, radius: 999),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(status, style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
-          Text(
-            sn,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 10.5,
-              color: Color(0xFF6B667A),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Spacer(),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(
-              value: percent,
-              minHeight: 6,
-              backgroundColor: const Color(0xFFE3E7FF),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                percent == 1.0
-                    ? const Color.fromARGB(255, 200, 51, 40)
-                    : percent == 0.5
-                    ? const Color.fromARGB(255, 250, 180, 40)
-                    : const Color.fromARGB(255, 50, 220, 78),
-              ),
-            ),
-          ),
+          SizedBox(height: 18),
+          SkeletonBox(height: 22, width: 180),
+          SizedBox(height: 8),
+          SkeletonBox(height: 12, width: 210),
+          SizedBox(height: 4),
+          SkeletonBox(height: 12, width: 120),
+          SizedBox(height: 18),
+          SkeletonBox(height: 64, width: 260, radius: 18),
+          Spacer(),
+          SkeletonBox(height: 8, width: 260, radius: 999),
+          SizedBox(height: 14),
+          SkeletonBox(height: 14, width: 90),
         ],
       ),
     );
   }
 }
 
-class _ProgressMiniCardSkeleton extends StatelessWidget {
-  const _ProgressMiniCardSkeleton();
+class _HealthAgendaCard extends StatelessWidget {
+  const _HealthAgendaCard({
+    required this.sede,
+    required this.fechaHora,
+    required this.equipos,
+    required this.duracionTexto,
+    this.onTap,
+  });
+
+  final String sede;
+  final String fechaHora;
+  final int equipos;
+  final String duracionTexto;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: MRSColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A0F172A),
+              blurRadius: 22,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: MRSColors.infoBg,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.health_and_safety_rounded,
+                color: MRSColors.primary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          sede,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: MRSColors.text,
+                          ),
+                        ),
+                      ),
+                      const _SoftBadge(
+                        text: 'Programado',
+                        bg: Color(0xFFECFDF3),
+                        fg: Color(0xFF15803D),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    fechaHora,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: MRSColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _SoftInfoChip(
+                        icon: Icons.inventory_2_outlined,
+                        text: '$equipos equipos',
+                      ),
+                      _SoftInfoChip(
+                        icon: Icons.schedule_rounded,
+                        text: duracionTexto,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthAgendaCardSkeleton extends StatelessWidget {
+  const _HealthAgendaCardSkeleton();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 190,
-      padding: const EdgeInsets.all(14),
+      width: 320,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FF),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: MRSColors.border),
       ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: const Row(
         children: [
-          SkeletonBox(height: 12, width: 110),
-          SizedBox(height: 10),
-          SkeletonBox(height: 16, width: 120),
-          SizedBox(height: 10),
-          SkeletonBox(height: 12, width: 160),
-          Spacer(),
-          SkeletonBox(height: 8, width: 170, radius: 99),
+          SkeletonBox(height: 58, width: 58, radius: 18),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(height: 16, width: 150),
+                SizedBox(height: 8),
+                SkeletonBox(height: 12, width: 120),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    SkeletonBox(height: 28, width: 88, radius: 999),
+                    SizedBox(width: 8),
+                    SkeletonBox(height: 28, width: 72, radius: 999),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1083,46 +1673,52 @@ class _SedeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F8FF),
-          borderRadius: BorderRadius.circular(16),
+          color: MRSColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: MRSColors.border),
         ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
                 color: iconBg,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: const Color.fromARGB(255, 40, 22, 100)),
+              child: Icon(icon, color: MRSColors.primary),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: MRSColors.text,
+                    ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF6B667A),
+                      fontSize: 13,
+                      color: MRSColors.muted,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
+            const Icon(Icons.chevron_right_rounded, color: MRSColors.muted),
           ],
         ),
       ),
@@ -1137,22 +1733,23 @@ class _SedeRowSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FF),
-        borderRadius: BorderRadius.circular(16),
+        color: MRSColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MRSColors.border),
       ),
       child: const Row(
         children: [
-          SkeletonBox(height: 38, width: 38, radius: 12),
-          SizedBox(width: 12),
+          SkeletonBox(height: 46, width: 46, radius: 14),
+          SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SkeletonBox(height: 14, width: 220),
+                SkeletonBox(height: 14, width: 180),
                 SizedBox(height: 8),
-                SkeletonBox(height: 12, width: 120),
+                SkeletonBox(height: 12, width: 100),
               ],
             ),
           ),
@@ -1165,254 +1762,4 @@ class _SedeRowSkeleton extends StatelessWidget {
 int _toInt(dynamic v) {
   if (v is int) return v;
   return int.tryParse('$v') ?? 0;
-}
-
-class _HealthCheckMiniCard extends StatelessWidget {
-  const _HealthCheckMiniCard({
-    required this.sede,
-    required this.fechaHora,
-    required this.equipos,
-    required this.duracionMins,
-    required this.onTap,
-  });
-
-  final String sede;
-  final String fechaHora;
-  final int equipos;
-  final int duracionMins;
-  final VoidCallback onTap;
-
-  static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-
-  String _pretty(String s) {
-    // llega "2025-12-04 09:30:00"
-    if (s.length < 16) return s;
-    return '${s.substring(0, 10)}  ${s.substring(11, 16)}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 220,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF6F8FF),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 230, 232, 255),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.health_and_safety_rounded,
-                color: mrPurple,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    sede,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _pretty(fechaHora),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B667A),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '$equipos equipos • ${duracionMins ~/ 60}h',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HealthCheckMiniCardSkeleton extends StatelessWidget {
-  const _HealthCheckMiniCardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FF),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Row(
-        children: [
-          SkeletonBox(height: 38, width: 38, radius: 12),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SkeletonBox(height: 14, width: 160),
-                SizedBox(height: 8),
-                SkeletonBox(height: 12, width: 110),
-                Spacer(),
-                SkeletonBox(height: 12, width: 140),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class MrBottomNav extends StatelessWidget {
-  const MrBottomNav({super.key, required this.activeIndex, this.onTap});
-  final int activeIndex;
-  final void Function(int index)? onTap;
-
-  static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-
-  @override
-  Widget build(BuildContext context) {
-    final inset = MediaQuery.of(context).padding.bottom; // gestos
-    final safeBottom = inset > 0 ? inset : 0.0;
-
-    // Fondo lila de ancho completo para que NO se vean “bordes” laterales
-    return SizedBox(
-      height: 66 + safeBottom,
-      child: Stack(
-        children: [
-          // ✅ Fondo completo (evita el “hueco” blanco a los lados)
-          Positioned.fill(
-            child: Container(
-              alignment: Alignment.bottomCenter,
-              decoration: const BoxDecoration(color: Color(0xFFEFEAFF)),
-            ),
-          ),
-
-          // ✅ Pill centrada, con margen lateral como tu diseño
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Material(
-              color: Colors.transparent,
-              elevation: 18,
-              shadowColor: Colors.black.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(22),
-              child: Container(
-                height: 74,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFEAFF),
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: BottomAppBar(
-                    color: Colors.transparent,
-                    elevation: 0,
-                    shape: const CircularNotchedRectangle(),
-                    notchMargin: 10,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _MrNavIcon(
-                            icon: Icons.home_rounded,
-                            active: activeIndex == 0,
-                            onPressed: () => onTap?.call(0),
-                          ),
-                          _MrNavIcon(
-                            icon: Icons.calendar_month_rounded,
-                            active: activeIndex == 1,
-                            onPressed: () => onTap?.call(1),
-                          ),
-                          const SizedBox(width: 54),
-                          _MrNavIcon(
-                            icon: Icons.description_rounded,
-                            active: activeIndex == 2,
-                            onPressed: () => onTap?.call(2),
-                          ),
-                          _MrNavIcon(
-                            icon: Icons.group_rounded,
-                            active: activeIndex == 3,
-                            onPressed: () => onTap?.call(3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MrNavIcon extends StatelessWidget {
-  const _MrNavIcon({required this.icon, required this.active, this.onPressed});
-
-  final IconData icon;
-  final bool active;
-  final VoidCallback? onPressed;
-
-  static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(
-          color: active ? mrPurple : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow:
-              active
-                  ? [
-                    BoxShadow(
-                      color: mrPurple.withOpacity(0.25),
-                      blurRadius: 14,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                  : null,
-        ),
-        child: Icon(
-          icon,
-          size: 26,
-          color: active ? Colors.white : const Color(0xFFB8B6C6),
-        ),
-      ),
-    );
-  }
 }
