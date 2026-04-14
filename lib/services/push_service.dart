@@ -9,10 +9,16 @@ import 'push_token_service.dart';
 class PushService {
   static final _fcm = FirebaseMessaging.instance;
 
-  static Future<void> init() async {
+  static Future<bool> init() async {
     // Permisos (Android 13+)
     final settings = await _fcm.requestPermission();
     log('Push permission: ${settings.authorizationStatus}');
+    final granted =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+    if (!granted) {
+      return false;
+    }
 
     final tokenService = PushTokenService(
       dio: AppHttp.I.dio,
@@ -59,5 +65,7 @@ class PushService {
     FirebaseMessaging.onMessageOpenedApp.listen((msg) {
       log('FCM opened: ${msg.data}');
     });
+
+    return true;
   }
 }

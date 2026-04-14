@@ -8,9 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:mrsos/screens/login_screen.dart';
 import 'package:mrsos/services/app_http.dart';
+import 'package:mrsos/services/push_service.dart';
 import 'package:mrsos/services/session_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:local_auth/local_auth.dart';
 
 import '../services/profile_service.dart';
 import '../widget/mr_skeleton.dart';
@@ -56,11 +56,57 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _loadPreferences();
     _loadAndValidateBiometrics();
     // IMPORTANTE: inicializar el service (antes de cualquier _saveProfile)
     _profile = ProfileService(dio: AppHttp.I.dio);
 
     _loadProfile();
+  }
+
+  Future<void> _loadPreferences() async {
+    final sp = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      prefNotificaciones = sp.getBool('pref_notificaciones') ?? true;
+      prefCorreos = sp.getBool('pref_correos') ?? true;
+    });
+  }
+
+  Future<void> _onToggleNotificaciones(bool enabled) async {
+    final sp = await SharedPreferences.getInstance();
+
+    if (!enabled) {
+      await sp.setBool('pref_notificaciones', false);
+      if (!mounted) return;
+      setState(() => prefNotificaciones = false);
+      return;
+    }
+
+    final granted = await PushService.init();
+    if (!mounted) return;
+
+    if (!granted) {
+      setState(() => prefNotificaciones = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se otorgaron permisos de notificaciones. Actívalos en ajustes del sistema.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    await sp.setBool('pref_notificaciones', true);
+    setState(() => prefNotificaciones = true);
+  }
+
+  Future<void> _onToggleCorreos(bool enabled) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('pref_correos', enabled);
+    if (!mounted) return;
+    setState(() => prefCorreos = enabled);
   }
 
   Future<void> _loadAndValidateBiometrics() async {
@@ -554,12 +600,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     _SwitchRow(
                       label: 'Notificaciones',
                       value: prefNotificaciones,
-                      onChanged: (v) => setState(() => prefNotificaciones = v),
+                      onChanged: _onToggleNotificaciones,
                     ),
                     _SwitchRow(
                       label: 'Correos',
                       value: prefCorreos,
-                      onChanged: (v) => setState(() => prefCorreos = v),
+                      onChanged: _onToggleCorreos,
                     ),
                     _SwitchRow(
                       label: 'Acceso con Biométricos',
