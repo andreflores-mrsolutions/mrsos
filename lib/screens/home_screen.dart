@@ -10,6 +10,7 @@ import 'package:mrsos/screens/tickets_sedes_screen.dart';
 import 'package:mrsos/screens/user_profile_screen.dart';
 import 'package:mrsos/screens/usuarios_list_screen.dart';
 import 'package:mrsos/services/push_router.dart';
+import 'package:mrsos/services/push_service.dart';
 import 'package:mrsos/services/session_store.dart';
 import '../services/app_http.dart';
 import '../services/index_service.dart';
@@ -289,6 +290,21 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
+  Future<void> _onNotificationPressed() async {
+    final granted = await PushService.init();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          granted
+              ? 'Notificaciones activadas correctamente.'
+              : 'No se otorgaron permisos de notificaciones.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final progresoItems =
@@ -324,6 +340,7 @@ class _HomeTabState extends State<HomeTab> {
                 name: widget.userName,
                 loading: _loading,
                 avatarUrl: _avatarUrl,
+                onNotificationsTap: () => _onNotificationPressed(),
               ),
               const SizedBox(height: 16),
               MRSkeleton(
@@ -735,11 +752,17 @@ class _HomeTabState extends State<HomeTab> {
 }
 
 class _TopHeader extends StatelessWidget {
-  const _TopHeader({required this.name, required this.loading, this.avatarUrl});
+  const _TopHeader({
+    required this.name,
+    required this.loading,
+    required this.onNotificationsTap,
+    this.avatarUrl,
+  });
 
   final String name;
   final bool loading;
   final String? avatarUrl;
+  final VoidCallback onNotificationsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -857,7 +880,7 @@ class _TopHeader extends StatelessWidget {
               border: Border.all(color: MRSColors.border),
             ),
             child: IconButton(
-              onPressed: () {},
+              onPressed: onNotificationsTap,
               icon: const Icon(
                 Icons.notifications_none_rounded,
                 color: MRSColors.primary,
