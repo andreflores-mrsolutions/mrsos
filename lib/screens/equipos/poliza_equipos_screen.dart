@@ -150,7 +150,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFFF7F4FF), Colors.white],
+                    colors: [Color(0xFFF4F6FA), Colors.white],
                   ),
                 ),
               ),
@@ -162,7 +162,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF6F8FF),
+                      color: const Color(0xFFF7F9FC),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -351,7 +351,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                                         child: const Icon(
                                           Icons.dns_rounded,
                                           size: 40,
-                                          color: Color(0xFFE0DBF7),
+                                          color: Color(0xFFEAF0FF),
                                         ),
                                       );
                                     },
@@ -368,7 +368,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                                 style: const TextStyle(
                                   fontSize: 18.5,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1F1B2E),
+                                  color: Color(0xFF0B1739),
                                 ),
                               ),
 
@@ -384,7 +384,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 14.5,
-                                  color: Color(0xFF6B667A),
+                                  color: Color(0xFF71809D),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -404,7 +404,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                                   style: const TextStyle(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF1F1B2E),
+                                    color: Color(0xFF0B1739),
                                   ),
                                 ),
 
@@ -422,7 +422,7 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                                       style: const TextStyle(
                                         fontSize: 30,
                                         fontWeight: FontWeight.w900,
-                                        color: Color(0xFF1F1B2E),
+                                        color: Color(0xFF0B1739),
                                       ),
                                     );
                                   },

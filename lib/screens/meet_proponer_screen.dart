@@ -15,8 +15,8 @@ class MeetProponerScreen extends StatefulWidget {
 }
 
 class _MeetProponerScreenState extends State<MeetProponerScreen> {
-  static const mrPurple = Color(0xFF200F4C);
-  static const textMuted = Color(0xFF6B667A);
+  static const mrPurple = Color(0xFF0B1B46);
+  static const textMuted = Color(0xFF71809D);
 
   late final MeetService api;
 
@@ -336,7 +336,7 @@ class _PickerSheet extends StatelessWidget {
                     (o.$1 == selected)
                         ? const Icon(
                           Icons.check_circle_rounded,
-                          color: Color(0xFF4F46E5),
+                          color: Color(0xFF3563FF),
                         )
                         : null,
                 onTap: () => Navigator.pop(context, o.$1),

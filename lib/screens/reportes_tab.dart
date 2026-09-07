@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mrsos/services/app_http.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/reportes_service.dart';
-import '../../widget/mr_skeleton.dart';
+import 'package:mrsos/widget/mr_skeleton.dart';
+import 'package:mrsos/widget/colors.dart';
+import 'package:mrsos/widget/mr_theme.dart';
 
 class ReportesTab extends StatefulWidget {
   const ReportesTab({super.key});
@@ -14,7 +16,7 @@ class ReportesTab extends StatefulWidget {
 class _ReportesTabState extends State<ReportesTab> {
   static const mrPurple = Color.fromARGB(255, 15, 24, 76);
   // ignore: unused_field
-  static const pillActive = Color(0xFF200F4C);
+  static const pillActive = Color(0xFF0B1B46);
 
   late final ReportesService _api;
 
@@ -96,129 +98,113 @@ class _ReportesTabState extends State<ReportesTab> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Fondo suave como mock
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFF7F4FF), Colors.white],
-            ),
-          ),
-        ),
+        const ColoredBox(color: MRSColors.bg),
 
-        RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-            children: [
-              const SizedBox(height: 38),
+        SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
+              children: [
+                MRPageIntro(
+                  eyebrow: 'Documentación de servicio',
+                  title: 'Hojas de servicio',
+                  subtitle:
+                      'Descarga la documentación generada por las atenciones realizadas a tus equipos.',
+                  trailing: _Badge(count: _loading ? null : _count),
+                ),
+                const SizedBox(height: 22),
 
-              // Header: icon + título + badge
-              Row(
-                children: [
-                  const Icon(
-                    Icons.article_rounded,
-                    color: Colors.black,
-                    size: 26,
+                // Search bar (con icono menu como mock)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
                   ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Hojas de Servicio',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1F1B2E),
+                  decoration: BoxDecoration(
+                    color: MRSColors.surface,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: MRSColors.border),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: MRSColors.shadow,
+                        blurRadius: 24,
+                        offset: Offset(0, 10),
                       ),
-                    ),
+                    ],
                   ),
-                  _Badge(count: _loading ? null : _count),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Search bar (con icono menu como mock)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0ECFF),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _search,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Buscar Hoja de Servicio',
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _search,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            hintText: 'Buscar Hoja de Servicio',
+                          ),
+                          onSubmitted: (v) {
+                            _q = v.trim();
+                            _load();
+                          },
                         ),
-                        onSubmitted: (v) {
-                          _q = v.trim();
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          _search.clear();
+                          _q = '';
+                          _load();
+                        },
+                        icon: const Icon(Icons.search_rounded, color: mrPurple),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Chips: HS-T / HS-HC / Polizas
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _TabChip(
+                        text: 'HS - T',
+                        active: _tab == 'HS_T',
+                        onTap: () {
+                          setState(() => _tab = 'HS_T');
                           _load();
                         },
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        _search.clear();
-                        _q = '';
-                        _load();
-                      },
-                      icon: const Icon(Icons.search_rounded, color: mrPurple),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      _TabChip(
+                        text: 'HS - HC',
+                        active: _tab == 'HS_HC',
+                        onTap: () {
+                          setState(() => _tab = 'HS_HC');
+                          _load();
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      _TabChip(
+                        text: 'Pólizas',
+                        active: _tab == 'POLIZAS',
+                        onTap: () {
+                          setState(() => _tab = 'POLIZAS');
+                          _load();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
-              // Chips: HS-T / HS-HC / Polizas
-              SizedBox(
-                height: 40,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _TabChip(
-                      text: 'HS - T',
-                      active: _tab == 'HS_T',
-                      onTap: () {
-                        setState(() => _tab = 'HS_T');
-                        _load();
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    _TabChip(
-                      text: 'HS - HC',
-                      active: _tab == 'HS_HC',
-                      onTap: () {
-                        setState(() => _tab = 'HS_HC');
-                        _load();
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    _TabChip(
-                      text: 'Pólizas',
-                      active: _tab == 'POLIZAS',
-                      onTap: () {
-                        setState(() => _tab = 'POLIZAS');
-                        _load();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              if (_tab == 'POLIZAS') ..._buildPolizas() else ..._buildHojas(),
-            ],
+                if (_tab == 'POLIZAS') ..._buildPolizas() else ..._buildHojas(),
+              ],
+            ),
           ),
         ),
       ],
@@ -244,7 +230,7 @@ class _ReportesTabState extends State<ReportesTab> {
             'No hay hojas para mostrar.',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
             ),
           ),
         ),
@@ -266,7 +252,7 @@ class _ReportesTabState extends State<ReportesTab> {
             'Enel · $sedeNombre',
             style: const TextStyle(
               fontWeight: FontWeight.w900,
-              color: Color(0xFF1F1B2E),
+              color: Color(0xFF0B1739),
             ),
           ),
         ),
@@ -311,7 +297,7 @@ class _ReportesTabState extends State<ReportesTab> {
             'No hay pólizas para mostrar.',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
             ),
           ),
         ),
@@ -414,32 +400,41 @@ class _DownloadCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(22),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.92),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
+          color: MRSColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: MRSColors.border),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
+              color: MRSColors.shadow,
+              blurRadius: 22,
+              offset: Offset(0, 10),
             ),
           ],
         ),
         child: Row(
           children: [
-            const Icon(Icons.download_rounded, size: 22, color: Colors.black87),
-            const SizedBox(width: 12),
+            const MRIconBox(
+              icon: Icons.description_outlined,
+              color: MRSColors.teal,
+              background: MRSColors.tealSoft,
+              size: 48,
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -448,11 +443,24 @@ class _DownloadCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 12.5,
-                      color: Color(0xFF6B667A),
+                      color: Color(0xFF71809D),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
+              ),
+            ),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: MRSColors.blueSoft,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.download_rounded,
+                size: 20,
+                color: MRSColors.accent,
               ),
             ),
           ],

@@ -52,8 +52,6 @@ dependencies:
   url_launcher: ^6.3.0
   video_player: ^2.10.1
   flutter_svg: ^2.0.10
-  firebase_core: ^4.4.0
-  firebase_messaging: ^16.1.1
   uuid: ^4.5.2
   flutter_local_notifications: ^19.5.0
 
@@ -91,44 +89,9 @@ flutter:
     - assets/video/
 
   fonts:
-    - family: TTNorms
+    - family: Manrope
       fonts:
-        - asset: assets/fonts/TTNorms-Thin.otf
-          weight: 100
-        - asset: assets/fonts/TTNorms-ExtraLight.otf
-          weight: 200
-        - asset: assets/fonts/TTNorms-Light.otf
-          weight: 300
-        - asset: assets/fonts/TTNorms-Regular.otf
-          weight: 400
-        - asset: assets/fonts/TTNorms-Medium.otf
-          weight: 500
-        - asset: assets/fonts/TTNorms-Bold.otf
-          weight: 700
-        - asset: assets/fonts/TTNorms-ExtraBold.otf
-          weight: 800
-        - asset: assets/fonts/TTNorms-Black.otf
-          weight: 900
-
-        # Italics
-        - asset: assets/fonts/TTNorms-Italic.otf
-          style: italic
-          weight: 400
-        - asset: assets/fonts/TTNorms-LightItalic.otf
-          style: italic
-          weight: 300
-        - asset: assets/fonts/TTNorms-MediumItalic.otf
-          style: italic
-          weight: 500
-        - asset: assets/fonts/TTNorms-BoldItalic.otf
-          style: italic
-          weight: 700
-        - asset: assets/fonts/TTNorms-ExtraBoldItalic.otf
-          style: italic
-          weight: 800
-        - asset: assets/fonts/TTNorms-BlackItalic.otf
-          style: italic
-          weight: 900
+        - asset: assets/fonts/Manrope-Variable.ttf
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

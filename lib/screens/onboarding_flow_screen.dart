@@ -89,9 +89,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Color(0xFFF3F0FF),
+        Color(0xFFF4F6FA),
         Color(0xFFFFFFFF),
-        Color(0xFFF7F6FF),
+        Color(0xFFF7F9FC),
         Color(0xFFFFFFFF),
       ],
       stops: [0.0, 0.40, 0.75, 1.0],
@@ -176,7 +176,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, c.text.trim()),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF200F4C),
+                        backgroundColor: const Color(0xFF0B1B46),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -356,7 +356,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     child: ElevatedButton(
       onPressed: _saving ? null : onTap,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFE9EDFF),
+        backgroundColor: const Color(0xFFEAF0FF),
         foregroundColor: Colors.black87,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -612,7 +612,7 @@ class OnboardingVerifyDataStep extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.35,
-                      color: Color(0xFF6B667A),
+                      color: Color(0xFF71809D),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -668,7 +668,7 @@ class OnboardingVerifyDataStep extends StatelessWidget {
                   const SizedBox(height: 12),
                   _ActionButtonLike(
                     text: 'Atras',
-                    bg: const Color(0xFFE9EDFF),
+                    bg: const Color(0xFFEAF0FF),
                     fg: Colors.black87,
                     onTap: onBack,
                   ),
@@ -734,7 +734,7 @@ class _UsernameStepState extends State<_UsernameStep> {
             style: TextStyle(
               fontSize: 16,
               height: 1.35,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -816,7 +816,7 @@ class _UsernameStepState extends State<_UsernameStep> {
                                     () =>
                                         Navigator.pop(context, _c.text.trim()),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF200F4C),
+                                  backgroundColor: const Color(0xFF0B1B46),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
@@ -850,7 +850,7 @@ class _UsernameStepState extends State<_UsernameStep> {
               style: TextStyle(
                 fontSize: 13.2,
                 height: 1.35,
-                color: Color(0xFF6B667A),
+                color: Color(0xFF71809D),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -866,7 +866,7 @@ class _UsernameStepState extends State<_UsernameStep> {
           const SizedBox(height: 12),
           _ActionButtonLike(
             text: 'Atras',
-            bg: const Color(0xFFE9EDFF),
+            bg: const Color(0xFFEAF0FF),
             fg: Colors.black87,
             onTap: widget.onBack,
           ),
@@ -914,7 +914,7 @@ class _PasswordStep extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               height: 1.35,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -933,7 +933,7 @@ class _PasswordStep extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13.2,
                 height: 1.4,
-                color: Color(0xFF6B667A),
+                color: Color(0xFF71809D),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -949,7 +949,7 @@ class _PasswordStep extends StatelessWidget {
           const SizedBox(height: 12),
           _ActionButtonLike(
             text: 'Atras',
-            bg: const Color(0xFFE9EDFF),
+            bg: const Color(0xFFEAF0FF),
             fg: Colors.black87,
             onTap: onBack,
           ),
@@ -997,7 +997,7 @@ class _PasswordFieldState extends State<_PasswordField> {
             ),
             child: const Icon(
               Icons.text_fields_rounded,
-              color: Color(0xFF200F4C),
+              color: Color(0xFF0B1B46),
             ),
           ),
           const SizedBox(width: 12),
@@ -1058,7 +1058,7 @@ class _AvatarStep extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               height: 1.35,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1075,7 +1075,7 @@ class _AvatarStep extends StatelessWidget {
                       ? const Icon(
                         Icons.camera_alt_rounded,
                         size: 32,
-                        color: Color(0xFF200F4C),
+                        color: Color(0xFF0B1B46),
                       )
                       : null,
             ),
@@ -1091,7 +1091,7 @@ class _AvatarStep extends StatelessWidget {
           const SizedBox(height: 12),
           _ActionButtonLike(
             text: 'Atras',
-            bg: const Color(0xFFE9EDFF),
+            bg: const Color(0xFFEAF0FF),
             fg: Colors.black87,
             onTap: onBack,
           ),
@@ -1133,7 +1133,7 @@ class _DoneStep extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               height: 1.35,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1147,7 +1147,7 @@ class _DoneStep extends StatelessWidget {
           const SizedBox(height: 12),
           _ActionButtonLike(
             text: 'Atras',
-            bg: const Color(0xFFE9EDFF),
+            bg: const Color(0xFFEAF0FF),
             fg: Colors.black87,
             onTap: onBack,
           ),
@@ -1204,7 +1204,7 @@ class _IntroScreen extends StatelessWidget {
   });
 
   static const Color mrBlue = Color(0xFF2F51FF);
-  static const Color subInk = Color(0xFF6B667A);
+  static const Color subInk = Color(0xFF71809D);
 
   @override
   Widget build(BuildContext context) {
@@ -1271,7 +1271,7 @@ class _IntroScreen extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onBack,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE9EDFF),
+                backgroundColor: const Color(0xFFEAF0FF),
                 foregroundColor: Colors.black87,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -1353,7 +1353,7 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF6B667A),
+              color: Color(0xFF71809D),
             ),
           ),
           const SizedBox(height: 6),
@@ -1425,7 +1425,7 @@ class _InfoCard extends StatelessWidget {
                       label,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF6B667A),
+                        color: Color(0xFF71809D),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1442,7 +1442,7 @@ class _InfoCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF6B667A),
+                  color: Color(0xFF71809D),
                 ),
               ),
             ],

@@ -42,7 +42,7 @@ class MRActionTile extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1EEFF),
+                  color: const Color(0xFFEAF0FF),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -59,7 +59,7 @@ class MRActionTile extends StatelessWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Color(0xFF6B667A),
+                        color: Color(0xFF71809D),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

@@ -1,29 +1,34 @@
 import 'package:flutter/material.dart';
 
 class MRSColors {
-  static const Color primary = Color(0xFF200F4C);
-  static const Color primaryDark = Color(0xFF160A38);
-  static const Color accent = Color(0xFF1F6FFF);
+  // Core palette taken from the current web portal.
+  static const Color primary = Color(0xFF0B1B46);
+  static const Color primaryDark = Color(0xFF071431);
+  static const Color accent = Color(0xFF3563FF);
+  static const Color teal = Color(0xFF13A6A2);
+  static const Color tealDark = Color(0xFF0C8582);
 
-  static const Color bg = Color(0xFFF5F7FB);
+  static const Color bg = Color(0xFFF4F6FA);
   static const Color surface = Colors.white;
-  static const Color soft = Color(0xFFF6F7FB);
+  static const Color soft = Color(0xFFF7F9FC);
+  static const Color blueSoft = Color(0xFFEAF0FF);
+  static const Color tealSoft = Color(0xFFE3F7F4);
 
-  static const Color border = Color(0x140F172A);
-  static const Color text = Color(0xFF0F172A);
-  static const Color muted = Color(0xFF64748B);
+  static const Color border = Color(0xFFDDE4EF);
+  static const Color text = Color(0xFF0B1739);
+  static const Color muted = Color(0xFF71809D);
 
-  static const Color successBg = Color(0xFFDCFCE7);
-  static const Color successText = Color(0xFF166534);
+  static const Color successBg = Color(0xFFE0F7EE);
+  static const Color successText = Color(0xFF168A62);
 
-  static const Color warningBg = Color(0xFFFFF7ED);
-  static const Color warningText = Color(0xFFC2410C);
+  static const Color warningBg = Color(0xFFFFF2D5);
+  static const Color warningText = Color(0xFFB26A00);
 
-  static const Color dangerBg = Color(0xFFFEF2F2);
-  static const Color dangerText = Color(0xFFB91C1C);
+  static const Color dangerBg = Color(0xFFFFE8EC);
+  static const Color dangerText = Color(0xFFD8425A);
 
-  static const Color infoBg = Color(0xFFEFF6FF);
-  static const Color infoText = Color(0xFF1D4ED8);
+  static const Color infoBg = Color(0xFFEAF0FF);
+  static const Color infoText = Color(0xFF315DDF);
 
-  static const Color shadow = Color(0x0A0F172A);
+  static const Color shadow = Color(0x120B1739);
 }

@@ -3,6 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/app_http.dart';
 import 'package:mrsos/services/session_store.dart';
+import 'package:mrsos/widget/colors.dart';
+import 'package:mrsos/widget/mr_theme.dart';
 
 import 'change_password_webview.dart'; // reutilízalo para WebView genérico (o crea uno simple)
 
@@ -294,24 +296,72 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FF),
+      backgroundColor: MRSColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black,
+        backgroundColor: MRSColors.bg,
         title: const Text(
-          'Nuevo Ticket',
+          'Nuevo ticket',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: SafeArea(
         child:
             _loading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
                   children: [
+                    const MRPageIntro(
+                      eyebrow: 'Nueva solicitud',
+                      title: '¿Cómo podemos ayudarte?',
+                      subtitle:
+                          'Selecciona el activo relacionado y cuéntanos qué está pasando. Te guiaremos paso a paso.',
+                    ),
+                    const SizedBox(height: 20),
+                    const MRSectionCard(
+                      padding: EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          MRIconBox(
+                            icon: Icons.support_agent_rounded,
+                            color: MRSColors.accent,
+                            background: MRSColors.blueSoft,
+                          ),
+                          SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Ticket de soporte',
+                                  style: TextStyle(
+                                    color: MRSColors.text,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Incidente, falla o solicitud técnica',
+                                  style: TextStyle(
+                                    color: MRSColors.muted,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: MRSColors.accent,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const _TicketFlowSteps(),
+                    const SizedBox(height: 20),
                     // Sede
                     _Card(
                       child: Row(
@@ -543,7 +593,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                       height: 52,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: mrPurple,
+                          backgroundColor: MRSColors.teal,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -573,16 +623,70 @@ class _Card extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: MRSColors.border),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
+            color: MRSColors.shadow,
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _TicketFlowSteps extends StatelessWidget {
+  const _TicketFlowSteps();
+
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      (Icons.location_on_outlined, 'Ubicación'),
+      (Icons.dns_outlined, 'Equipo'),
+      (Icons.description_outlined, 'Detalles'),
+    ];
+    return Row(
+      children: [
+        for (var index = 0; index < steps.length; index++) ...[
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: index == 0 ? MRSColors.accent : MRSColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: index == 0 ? MRSColors.accent : MRSColors.border,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    steps[index].$1,
+                    size: 17,
+                    color: index == 0 ? Colors.white : MRSColors.muted,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  steps[index].$2,
+                  style: TextStyle(
+                    color: index == 0 ? MRSColors.accent : MRSColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (index < steps.length - 1)
+            const Expanded(child: Divider(color: MRSColors.border)),
+        ],
+      ],
     );
   }
 }
@@ -606,7 +710,7 @@ class _InputLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF200F4C)),
+        Icon(icon, color: const Color(0xFF0B1B46)),
         const SizedBox(width: 10),
         Expanded(
           child: TextField(

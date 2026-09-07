@@ -26,10 +26,10 @@ class SubirLogsScreen extends StatefulWidget {
 
 class _SubirLogsScreenState extends State<SubirLogsScreen> {
   static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-  static const Color accent = Color(0xFF4B3CFF); // morado/azul del UI
-  static const Color soft = Color(0xFFF1F0FF);
+  static const Color accent = Color(0xFF3563FF); // morado/azul del UI
+  static const Color soft = Color(0xFFEAF0FF);
   static const Color soft2 = Color(0xFFF6F7FF);
-  static const Color textMuted = Color(0xFF6B667A);
+  static const Color textMuted = Color(0xFF71809D);
 
   final List<PlatformFile> _files = [];
   bool _uploading = false;
@@ -498,7 +498,7 @@ class _SoftButton extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
 
-  static const Color soft = Color(0xFFF1F0FF);
+  static const Color soft = Color(0xFFEAF0FF);
 
   @override
   Widget build(BuildContext context) {

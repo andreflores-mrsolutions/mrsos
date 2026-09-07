@@ -8,12 +8,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:mrsos/screens/login_screen.dart';
 import 'package:mrsos/services/app_http.dart';
-import 'package:mrsos/services/push_service.dart';
+import 'package:mrsos/services/local_notify.dart';
 import 'package:mrsos/services/session_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/profile_service.dart';
 import '../widget/mr_skeleton.dart';
+import '../widget/colors.dart';
+import '../widget/mr_theme.dart';
 import 'change_password_webview.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -83,7 +85,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
 
-    final granted = await PushService.init();
+    final granted = await LocalNotify.requestPermission();
     if (!mounted) return;
 
     if (!granted) {
@@ -417,27 +419,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: MRSColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black,
+        backgroundColor: MRSColors.bg,
         title: const Text(
-          'Mis Datos',
+          'Configuración',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadProfile,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
             children: [
-              const SizedBox(height: 30),
+              const SizedBox(height: 12),
+              const MRPageIntro(
+                eyebrow: 'Cuenta y preferencias',
+                title: 'Configuración',
+                subtitle:
+                    'Mantén tus datos actualizados y decide cómo quieres recibir novedades del servicio.',
+              ),
+              const SizedBox(height: 24),
 
               // Avatar + nombre grande
-              Center(
+              MRSectionCard(
                 child: Column(
                   children: [
                     Stack(
@@ -445,19 +452,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         GestureDetector(
                           onTap: _loading ? null : _pickAvatar,
                           child: CircleAvatar(
-                            radius: 74,
-                            backgroundColor: const Color.fromARGB(
-                              255,
-                              230,
-                              232,
-                              255,
-                            ),
+                            radius: 58,
+                            backgroundColor: MRSColors.blueSoft,
                             backgroundImage: _avatarProvider(),
                             child:
                                 (_avatarProvider() == null)
                                     ? const Icon(
                                       Icons.person_rounded,
-                                      size: 74,
+                                      size: 58,
                                       color: mrPurple,
                                     )
                                     : null,
@@ -470,7 +472,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: mrPurple,
+                              color: MRSColors.accent,
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(color: Colors.white, width: 3),
                             ),
@@ -491,7 +493,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         enabled: _loading,
                         child: Text(
                           fullName,
-                          style: const TextStyle(fontSize: 20),
+                          style: const TextStyle(
+                            fontSize: 21,
+                            color: MRSColors.text,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
@@ -586,8 +592,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F8FF),
-                  borderRadius: BorderRadius.circular(16),
+                  color: MRSColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: MRSColors.border),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: MRSColors.shadow,
+                      blurRadius: 22,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -749,7 +763,7 @@ class _ProfileTile extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     fontSize: 8.5,
-                    color: Color(0xFF6B667A),
+                    color: Color(0xFF71809D),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -863,7 +877,7 @@ class _InputRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FF),
+        color: const Color(0xFFF7F9FC),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

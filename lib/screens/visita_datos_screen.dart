@@ -17,7 +17,7 @@ class VisitaDatosScreen extends StatefulWidget {
 }
 
 class _VisitaDatosScreenState extends State<VisitaDatosScreen> {
-  static const purple = Color(0xFF4F46E5);
+  static const purple = Color(0xFF3563FF);
   static const cardBg = Colors.white;
 
   final _folioCtrl = TextEditingController();
@@ -88,7 +88,7 @@ class _VisitaDatosScreenState extends State<VisitaDatosScreen> {
     final marca = _s(t['maNombre']).trim();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -300,7 +300,7 @@ class _VisitaDatosScreenState extends State<VisitaDatosScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFEDE9FF),
+          color: const Color(0xFFEAF0FF),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -351,7 +351,7 @@ class _VisitaDatosScreenState extends State<VisitaDatosScreen> {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFEDE9FF),
+          backgroundColor: const Color(0xFFEAF0FF),
           foregroundColor: const Color(0xFF1F2937),
           elevation: 0,
           shape: RoundedRectangleBorder(

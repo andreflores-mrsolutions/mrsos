@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'colors.dart';
+
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
     super.key,
@@ -21,15 +23,9 @@ class AppScaffold extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF3F0FF),
-              Color(0xFFFFFFFF),
-              Color(0xFFF7F6FF),
-              Color(0xFFFFFFFF),
-            ],
-            stops: [0.0, 0.40, 0.75, 1.0],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8FAFD), MRSColors.bg],
           ),
         ),
         child: SafeArea(child: Padding(padding: padding, child: child)),

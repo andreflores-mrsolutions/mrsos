@@ -6,6 +6,8 @@ import 'package:mrsos/screens/visita_datos_screen.dart';
 import '../services/index_service.dart';
 import '../services/app_http.dart'; // si tu IndexService usa AppHttp; si no, ajusta el import
 import '../widget/mr_skeleton.dart';
+import '../widget/colors.dart';
+import '../widget/mr_theme.dart';
 import 'visita_actions_sheet.dart';
 import '../services/meet_service.dart';
 import 'meet_generar_screen.dart';
@@ -31,10 +33,9 @@ class TicketsSedesScreen extends StatefulWidget {
 class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
   static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
   // ignore: unused_field
-  static const Color chipBg = Color(0xFFEDE9FF);
+  static const Color chipBg = Color(0xFFEAF0FF);
   // ignore: unused_field
   static const Color chipBorder = Color(0xFFD9D0FF);
-  static const Color textMuted = Color(0xFF6B667A);
 
   late final IndexService api;
   Map<String, dynamic> indexData = {};
@@ -45,6 +46,8 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
   List<Map<String, dynamic>> sedes = [];
 
   int? _selectedCsId; // null = ALL
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
@@ -52,6 +55,12 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
     api = IndexService(dio: AppHttp.I.dio); // ✅ misma cookie PHPSESSID
     _selectedCsId = widget.initialCsId;
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   String _s(dynamic v) => (v ?? '').toString();
@@ -71,7 +80,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
     final est = _s(t['tiVisitaEstado']).toLowerCase().trim();
 
     // 1) Sin visita -> sheet con Asignar / Proponer
-    if (est.isEmpty || est == null) {
+    if (est.isEmpty) {
       await showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
@@ -201,7 +210,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                     ListTile(
                       leading: const Icon(
                         Icons.check_circle_rounded,
-                        color: Color(0xFF4F46E5),
+                        color: Color(0xFF3563FF),
                       ),
                       title: const Text(
                         'Aceptar meet',
@@ -354,7 +363,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
     final t = (tipo ?? '').toLowerCase().trim();
     if (t == 'servicio') {
       return const _PillStyle(
-        bg: Color(0xFFEAE6FF),
+        bg: Color(0xFFEAF0FF),
         fg: mrPurple,
         label: 'Servicio',
       );
@@ -391,7 +400,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
     if (proc == 'meet') {
       final modo = (t['tiMeetModo'] ?? '').toString().toLowerCase().trim();
 
-      if (modo.isEmpty || modo == null) return 'Proponer un meet';
+      if (modo.isEmpty) return 'Proponer un meet';
 
       if (modo == 'propuesta_ingeniero' || modo == 'asignado_ingeniero') {
         // texto exacto que pediste
@@ -437,7 +446,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
 
     if (proc == 'logs') {
       return const [
-        _MiniChip(text: 'Logs', bg: Color(0xFFEAE6FF), fg: mrPurple),
+        _MiniChip(text: 'Logs', bg: Color(0xFFEAF0FF), fg: mrPurple),
       ];
     }
 
@@ -445,11 +454,11 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
       final modo = (t['tiMeetModo'] ?? '').toString().toLowerCase().trim();
       if (modo.contains('propuesta')) {
         return const [
-          _MiniChip(text: 'Asignación', bg: Color(0xFFEAE6FF), fg: mrPurple),
+          _MiniChip(text: 'Asignación', bg: Color(0xFFEAF0FF), fg: mrPurple),
         ];
       }
       return const [
-        _MiniChip(text: 'Servicio', bg: Color(0xFFEAE6FF), fg: mrPurple),
+        _MiniChip(text: 'Servicio', bg: Color(0xFFEAF0FF), fg: mrPurple),
       ];
     }
 
@@ -490,58 +499,217 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
       final tickets = (s['tickets'] is List) ? s['tickets'] as List : const [];
       for (final tt in tickets) {
         final t = Map<String, dynamic>.from(tt as Map);
-        out.add(
-          _TicketVM(
-            csId: csId,
-            csNombre: csNombre,
-            clNombre: clNombre,
-            prefix: prefix,
-            data: t,
-          ),
+        final vm = _TicketVM(
+          csId: csId,
+          csNombre: csNombre,
+          clNombre: clNombre,
+          prefix: prefix,
+          data: t,
         );
+        final query = _query.trim().toLowerCase();
+        if (query.isNotEmpty) {
+          final searchable =
+              [
+                '$prefix-${t['tiId'] ?? ''}',
+                csNombre,
+                clNombre,
+                t['eqModelo'],
+                t['eqVersion'],
+                t['maNombre'],
+                t['peSN'],
+                t['tiProceso'],
+              ].join(' ').toLowerCase();
+          if (!searchable.contains(query)) continue;
+        }
+        out.add(vm);
       }
     }
     return out;
   }
 
+  Future<void> _handleTicketAction(_TicketVM vm) async {
+    final t = vm.data;
+    final proc = _s(t['tiProceso']).toLowerCase().trim();
+
+    if (proc == 'logs') {
+      final tiId = int.tryParse(_s(t['tiId'])) ?? 0;
+      if (tiId <= 0) return;
+      final eqModelo = _s(t['eqModelo']);
+      final eqVersion = _s(t['eqVersion']);
+      final marca = _s(t['maNombre']);
+      final equipoNombre =
+          eqVersion.trim().isEmpty ? eqModelo : '$eqModelo $eqVersion';
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => SubirLogsScreen(
+                tiId: tiId,
+                marca: marca,
+                modelo: equipoNombre.isEmpty ? eqModelo : equipoNombre,
+              ),
+        ),
+      );
+      if (ok == true) await _load();
+      return;
+    }
+
+    if (proc == 'meet') {
+      await _openMeetActions(vm);
+      return;
+    }
+    if (proc == 'visita') {
+      await _openVisitaFlow(t);
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esta acción se habilitará en la siguiente fase.'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tickets = _ticketsFiltrados();
+    final visibleTickets =
+        tickets.where((ticket) => !ticket.isSkeleton).toList();
+    final actionCount =
+        visibleTickets
+            .where((ticket) => _accionRequerida(ticket.data) != null)
+            .length;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: MRSColors.bg,
       extendBody: true,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,
-          edgeOffset: 12,
-          displacement: 18,
+          edgeOffset: 18,
+          displacement: 24,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 110),
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 44),
             children: [
-              // AppBar “manual” (como tu screenshot)
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  _RoundIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () => Navigator.pop(context),
                   ),
+                  const SizedBox(width: 12),
                   const Expanded(
-                    child: Text(
-                      'Grupos/Sedes',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Centro de soporte',
+                          style: TextStyle(
+                            color: MRSColors.text,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          'Todos tus casos en un lugar',
+                          style: TextStyle(
+                            color: MRSColors.muted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 48), // balance
+                  _RoundIconButton(icon: Icons.refresh_rounded, onTap: _load),
                 ],
               ),
-              const SizedBox(height: 6),
-
-              // Chips filtro sedes
+              const SizedBox(height: 22),
+              MRPageIntro(
+                eyebrow: 'Mesa de ayuda',
+                title: 'Tickets de soporte',
+                subtitle:
+                    actionCount > 0
+                        ? 'Tienes $actionCount ${actionCount == 1 ? 'caso que necesita' : 'casos que necesitan'} tu atención.'
+                        : 'Todo está en orden. Consulta el avance de cada caso desde aquí.',
+              ),
+              const SizedBox(height: 20),
+              MRSectionCard(
+                padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, color: MRSColors.muted),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) => setState(() => _query = value),
+                        decoration: const InputDecoration(
+                          filled: false,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          hintText: 'Folio, equipo, serie o sede',
+                        ),
+                      ),
+                    ),
+                    if (_query.isNotEmpty)
+                      IconButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      )
+                    else
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: MRSColors.blueSoft,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(
+                          Icons.tune_rounded,
+                          color: MRSColors.accent,
+                          size: 19,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TicketSummaryMetric(
+                      icon: Icons.layers_outlined,
+                      label: 'Total visibles',
+                      value: _loading ? '—' : '${visibleTickets.length}',
+                      color: MRSColors.accent,
+                      background: MRSColors.blueSoft,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _TicketSummaryMetric(
+                      icon: Icons.warning_amber_rounded,
+                      label: 'Requieren acción',
+                      value: _loading ? '—' : '$actionCount',
+                      color: MRSColors.warningText,
+                      background: MRSColors.warningBg,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const _SectionLabel(
+                title: 'Filtrar por sede',
+                icon: Icons.location_on_outlined,
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 height: 44,
                 child: MRSkeleton(
@@ -550,7 +718,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       _FilterChipPill(
-                        text: 'All',
+                        text: 'Todos',
                         selected: _selectedCsId == null,
                         onTap: () => setState(() => _selectedCsId = null),
                       ),
@@ -571,219 +739,91 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                   ),
                 ),
               ),
-
-              const SizedBox(height: 14),
-
-              // Lista de tickets (cards)
-              ...tickets.map((vm) {
-                if (vm.isSkeleton) return const _TicketCardSkeleton();
-
-                final t = vm.data;
-                final tiId = (t['tiId'] ?? '').toString();
-                final codigo = '${vm.prefix}-$tiId';
-
-                final modelo = (t['eqModelo'] ?? '').toString();
-                final version = (t['eqVersion'] ?? '').toString();
-                final marca = (t['maNombre'] ?? '').toString();
-                final sn = (t['peSN'] ?? '').toString();
-
-                final equipo = (version.trim().isEmpty) ? modelo : modelo;
-                final critic = _criticColor(t['tiNivelCriticidad']);
-                final tipo = _tipoStyle(t['tiTipoTicket']?.toString());
-                final accion = _accionRequerida(t);
-
-                final chips = _chipsEstado(t);
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => TicketDetailScreen(
-                                tiId: int.parse(tiId),
-                                folio: '${t['folio'] ?? 'INE - ${t['tiId']}'}',
-                              ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: critic, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 18,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top line: SN + Marca + badge ENE-xx
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'SN: $sn · $marca',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: textMuted,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFE7EC),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  codigo,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
-                                    color: mrPurple,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Equipo
-                          Text(
-                            equipo.isEmpty ? 'Equipo sin modelo' : equipo,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          // Badges row
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              ...chips.map((c) => _MiniChipWidget(c)),
-                              _MiniChipWidget(
-                                _MiniChip(
-                                  text: tipo.label,
-                                  bg: tipo.bg,
-                                  fg: tipo.fg,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Acción requerida
-                          if (accion != null) ...[
-                            const SizedBox(height: 10),
-                            const Text(
-                              'Acción Requerida:',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: textMuted,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: InkWell(
-                                onTap: () async {
-                                  final proc =
-                                      _s(t['tiProceso']).toLowerCase().trim();
-
-                                  if (proc == 'logs') {
-                                    final tiId = t['tiId'];
-                                    if (tiId <= 0) return;
-
-                                    final eqModelo = _s(t['eqModelo']);
-                                    final eqVersion = _s(t['eqVersion']);
-                                    final marca = _s(t['maNombre']);
-                                    final equipoNombre =
-                                        (eqVersion.trim().isEmpty)
-                                            ? eqModelo
-                                            : '$eqModelo $eqVersion';
-
-                                    final ok = await Navigator.push<bool>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => SubirLogsScreen(
-                                              tiId: tiId,
-                                              marca: marca,
-                                              modelo:
-                                                  equipoNombre.isEmpty
-                                                      ? eqModelo
-                                                      : equipoNombre,
-                                            ),
-                                      ),
-                                    );
-
-                                    if (ok == true) await _load();
-                                    return;
-                                  }
-
-                                  if (proc == 'meet') {
-                                    await _openMeetActions(vm);
-                                    return;
-                                  }
-                                  if (proc == 'visita') {
-                                    await _openVisitaFlow(t);
-                                    return;
-                                  }
-
-                                  // VISITA / ENCUESTA (si luego quieres abrir quick screens)
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Esta acción se habilitará en la siguiente fase.',
-                                      ),
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF3D6),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    accion,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 12.5,
-                                      color: Color(0xFF8A5A00),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  const Expanded(
+                    child: _SectionLabel(
+                      title: 'Casos visibles',
+                      icon: Icons.view_agenda_outlined,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MRSColors.blueSoft,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: Text(
+                      _loading ? '—' : '${visibleTickets.length}',
+                      style: const TextStyle(
+                        color: MRSColors.accent,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                );
-              }),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (!_loading && visibleTickets.isEmpty)
+                const _EmptyTickets()
+              else
+                ...tickets.map((vm) {
+                  if (vm.isSkeleton) return const _TicketCardSkeleton();
+
+                  final t = vm.data;
+                  final tiId = (t['tiId'] ?? '').toString();
+                  final codigo = '${vm.prefix}-$tiId';
+                  final modelo = (t['eqModelo'] ?? '').toString();
+                  final version = (t['eqVersion'] ?? '').toString();
+                  final marca = (t['maNombre'] ?? '').toString();
+                  final sn = (t['peSN'] ?? '').toString();
+                  final equipo =
+                      version.trim().isEmpty ? modelo : '$modelo $version';
+                  final critic = _criticColor(t['tiNivelCriticidad']);
+                  final tipo = _tipoStyle(t['tiTipoTicket']?.toString());
+                  final accion = _accionRequerida(t);
+                  final chips = _chipsEstado(t);
+                  final parsedTiId = int.tryParse(tiId) ?? 0;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: _TicketListCard(
+                      code: codigo,
+                      equipment: equipo.isEmpty ? 'Equipo sin modelo' : equipo,
+                      brand: marca,
+                      serial: sn,
+                      site: vm.csNombre,
+                      process:
+                          _s(t['tiProceso']).trim().isEmpty
+                              ? 'En revisión'
+                              : _s(t['tiProceso']),
+                      criticColor: critic,
+                      type: tipo,
+                      chips: chips,
+                      action: accion,
+                      onAction:
+                          accion == null ? null : () => _handleTicketAction(vm),
+                      onTap: () {
+                        if (parsedTiId <= 0) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => TicketDetailScreen(
+                                  tiId: parsedTiId,
+                                  folio:
+                                      '${t['folio'] ?? 'INE - ${t['tiId']}'}',
+                                ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }),
             ],
           ),
         ),
@@ -793,6 +833,384 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
 }
 
 // -------------------- UI components --------------------
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: MRSColors.surface,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: MRSColors.border),
+        ),
+        child: Icon(icon, color: MRSColors.primary, size: 21),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.title, required this.icon});
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: MRSColors.accent, size: 19),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: MRSColors.text,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyTickets extends StatelessWidget {
+  const _EmptyTickets();
+
+  @override
+  Widget build(BuildContext context) {
+    return MRSectionCard(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+      child: Column(
+        children: [
+          const MRIconBox(
+            icon: Icons.check_circle_outline_rounded,
+            color: MRSColors.successText,
+            background: MRSColors.successBg,
+            size: 58,
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'No encontramos tickets',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Prueba otra sede o cambia tu búsqueda.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketListCard extends StatelessWidget {
+  const _TicketListCard({
+    required this.code,
+    required this.equipment,
+    required this.brand,
+    required this.serial,
+    required this.site,
+    required this.process,
+    required this.criticColor,
+    required this.type,
+    required this.chips,
+    required this.action,
+    required this.onTap,
+    this.onAction,
+  });
+
+  final String code;
+  final String equipment;
+  final String brand;
+  final String serial;
+  final String site;
+  final String process;
+  final Color criticColor;
+  final _PillStyle type;
+  final List<_MiniChip> chips;
+  final String? action;
+  final VoidCallback onTap;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Ink(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: MRSColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: MRSColors.border),
+            boxShadow: const [
+              BoxShadow(
+                color: MRSColors.shadow,
+                blurRadius: 24,
+                offset: Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: criticColor,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          code,
+                          style: const TextStyle(
+                            color: MRSColors.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: MRSColors.muted,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                site.isEmpty ? 'Sede no indicada' : site,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: MRSColors.muted,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  _MiniChipWidget(
+                    _MiniChip(text: type.label, bg: type.bg, fg: type.fg),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: MRSColors.muted,
+                    size: 20,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                equipment,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: MRSColors.text,
+                  fontSize: 19,
+                  height: 1.15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                [
+                  if (brand.trim().isNotEmpty) brand.trim(),
+                  if (serial.trim().isNotEmpty) 'SN $serial',
+                ].join('  ·  '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: MRSColors.muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: chips.map(_MiniChipWidget.new).toList(),
+              ),
+              const SizedBox(height: 16),
+              if (action != null)
+                InkWell(
+                  onTap: onAction,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: MRSColors.warningBg,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.bolt_rounded,
+                          color: MRSColors.warningText,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Tu siguiente acción',
+                                style: TextStyle(
+                                  color: MRSColors.warningText,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                action!,
+                                style: const TextStyle(
+                                  color: MRSColors.text,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: MRSColors.warningText,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.only(top: 12),
+                  decoration: const BoxDecoration(
+                    border: Border(top: BorderSide(color: MRSColors.border)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.route_outlined,
+                        color: MRSColors.teal,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Etapa actual',
+                        style: TextStyle(
+                          color: MRSColors.muted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      Flexible(
+                        child: Text(
+                          process,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: MRSColors.text,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TicketSummaryMetric extends StatelessWidget {
+  const _TicketSummaryMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.background,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return MRSectionCard(
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        children: [
+          MRIconBox(icon: icon, color: color, background: background, size: 42),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  maxLines: 2,
+                  style: const TextStyle(
+                    color: MRSColors.muted,
+                    fontSize: 9.5,
+                    height: 1.1,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: MRSColors.text,
+                    fontSize: 25,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _FilterChipPill extends StatelessWidget {
   const _FilterChipPill({

@@ -16,7 +16,7 @@ class VisitaModificarScreen extends StatefulWidget {
 }
 
 class _VisitaModificarScreenState extends State<VisitaModificarScreen> {
-  static const purple = Color(0xFF4F46E5);
+  static const purple = Color(0xFF3563FF);
 
   DateTime _fechaHora = DateTime.now().add(const Duration(days: 2, hours: 2));
   int _duracionMin = 60;
@@ -152,7 +152,7 @@ class _VisitaModificarScreenState extends State<VisitaModificarScreen> {
     final marca = _s(t['maNombre']).trim();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -424,7 +424,7 @@ class _VisitaModificarScreenState extends State<VisitaModificarScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFEDE9FF),
+          color: const Color(0xFFEAF0FF),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -438,7 +438,7 @@ class _VisitaModificarScreenState extends State<VisitaModificarScreen> {
   Widget _durationPicker() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FF),
+        color: const Color(0xFFEAF0FF),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

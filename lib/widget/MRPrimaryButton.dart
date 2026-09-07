@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
+import 'colors.dart';
+
 class MRPrimaryButton extends StatelessWidget {
   const MRPrimaryButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.loading = false,
-    this.color = const Color(0xFF200F4C), // #200f4c
+    this.color = MRSColors.teal,
+    this.icon = Icons.arrow_forward_rounded,
   });
 
   final String text;
   final VoidCallback? onPressed;
   final bool loading;
   final Color color;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +25,12 @@ class MRPrimaryButton extends StatelessWidget {
       width: double.infinity,
       child: Material(
         color: color,
-        borderRadius: BorderRadius.circular(18),
-        elevation: 10,
+        borderRadius: BorderRadius.circular(15),
+        elevation: 0,
         shadowColor: color.withOpacity(.25),
         child: InkWell(
           onTap: loading ? null : onPressed,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(15),
           splashColor: Colors.white.withOpacity(.10),
           highlightColor: Colors.white.withOpacity(.06),
           child: Center(
@@ -43,26 +47,31 @@ class MRPrimaryButton extends StatelessWidget {
                           color: Colors.white,
                         ),
                       )
-                      : Row(
+                      : Padding(
                         key: const ValueKey('text'),
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            text,
-                            style: const TextStyle(
-                              fontFamily: 'TTNorms',
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.2,
-                              color: Colors.white,
-                              fontSize: 16,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                text,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontFamily: 'Manrope',
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Colors.white,
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            Icon(icon, color: Colors.white),
+                          ],
+                        ),
                       ),
             ),
           ),

@@ -145,7 +145,7 @@ class _AdminUsuarioDetalleScreenState extends State<AdminUsuarioDetalleScreen> {
     if (url.isEmpty) {
       return const CircleAvatar(
         radius: 44,
-        backgroundColor: Color(0xFFEAE6FF),
+        backgroundColor: Color(0xFFEAF0FF),
         child: Icon(Icons.person_rounded, size: 46, color: mrPurple),
       );
     }
@@ -162,7 +162,7 @@ class _AdminUsuarioDetalleScreenState extends State<AdminUsuarioDetalleScreen> {
           errorBuilder: (_, __, ___) {
             return const CircleAvatar(
               radius: 44,
-              backgroundColor: Color(0xFFEAE6FF),
+              backgroundColor: Color(0xFFEAF0FF),
               child: Icon(Icons.person_rounded, size: 46, color: mrPurple),
             );
           },
@@ -200,7 +200,7 @@ class _AdminUsuarioDetalleScreenState extends State<AdminUsuarioDetalleScreen> {
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0DBF7),
+                  color: const Color(0xFFEAF0FF),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -660,7 +660,7 @@ class _AdminUsuarioDetalleScreenState extends State<AdminUsuarioDetalleScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF6B667A),
+                            color: Color(0xFF71809D),
                           ),
                         ),
                       ),
@@ -729,7 +729,7 @@ class _InfoCard extends StatelessWidget {
                       label,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF6B667A),
+                        color: Color(0xFF71809D),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -746,7 +746,7 @@ class _InfoCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF6B667A),
+                  color: Color(0xFF71809D),
                 ),
               ),
             ],
@@ -813,7 +813,7 @@ class _DropdownCard<T> extends StatelessWidget {
                     label,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF6B667A),
+                      color: Color(0xFF71809D),
                       fontWeight: FontWeight.w700,
                     ),
                   ),

@@ -9,7 +9,9 @@ import 'package:mrsos/screens/visita_datos_screen.dart';
 import 'package:mrsos/services/meet_service.dart';
 import '../services/index_service.dart';
 import '../services/app_http.dart'; // o tu cliente Dio actual
+import '../widget/colors.dart';
 import '../widget/mr_skeleton.dart';
+import '../widget/mr_theme.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({
@@ -27,7 +29,7 @@ class TicketDetailScreen extends StatefulWidget {
 
 class _TicketDetailScreenState extends State<TicketDetailScreen> {
   static const Color mrPurple = Color.fromARGB(255, 15, 24, 76);
-  static const Color textMuted = Color(0xFF6B667A);
+  static const Color textMuted = Color(0xFF71809D);
 
   late final IndexService api;
 
@@ -218,7 +220,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                     ListTile(
                       leading: const Icon(
                         Icons.check_circle_rounded,
-                        color: Color(0xFF4F46E5),
+                        color: Color(0xFF3563FF),
                       ),
                       title: const Text(
                         'Aceptar meet',
@@ -370,6 +372,49 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     return null;
   }
 
+  Future<void> _handlePrimaryAction() async {
+    final proc = _s(d['tiProceso']).toLowerCase().trim();
+
+    if (proc == 'logs') {
+      final tiId = widget.tiId;
+      if (tiId <= 0) return;
+      final eqModelo = _s(d['eqModelo']);
+      final eqVersion = _s(d['eqVersion']);
+      final marca = _s(d['maNombre']);
+      final equipoNombre =
+          eqVersion.trim().isEmpty ? eqModelo : '$eqModelo $eqVersion';
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => SubirLogsScreen(
+                tiId: tiId,
+                marca: marca,
+                modelo: equipoNombre.isEmpty ? eqModelo : equipoNombre,
+              ),
+        ),
+      );
+      if (ok == true) await _load();
+      return;
+    }
+
+    if (proc == 'meet') {
+      await _openMeetActions();
+      return;
+    }
+    if (proc == 'visita') {
+      await _openVisitaFlow(d);
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esta acción se habilitará en la siguiente fase.'),
+      ),
+    );
+  }
+
   // URLs imagenes (escapando espacios)
   String _equipImgUrl({
     required String marca,
@@ -387,6 +432,462 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final eqModelo = _s(d['eqModelo']);
+    final eqVersion = _s(d['eqVersion']);
+    final marca = _s(d['maNombre']);
+    final sn = _s(d['peSN']);
+    final desc = _s(d['tiDescripcion']);
+    final diag = _s(d['tiDiagnostico']);
+    final proc = _s(d['tiProceso']);
+    final critic = _s(d['tiNivelCriticidad'], '3');
+    final ticketType = _s(d['tiTipoTicket'], 'Servicio');
+    final site = _s(d['csNombre']);
+    final creation = _s(d['tiFechaCreacion'], 'Fecha no disponible');
+    final assignment = _s(d['tiFechaAsignacion'], 'Aún sin asignar');
+    final equipmentName =
+        eqVersion.trim().isEmpty ? eqModelo : '$eqModelo $eqVersion';
+    final imageUrl = _equipImgUrl(marca: marca, modeloSinVersion: eqModelo);
+    final brandUrl = _brandUrl(marca);
+    final progress = _progressFromProceso(proc);
+    final action = _accionRequerida(d);
+    final criticColor =
+        critic == '1'
+            ? MRSColors.dangerText
+            : critic == '2'
+            ? MRSColors.warningText
+            : MRSColors.successText;
+
+    return Scaffold(
+      backgroundColor: MRSColors.bg,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 48),
+            children: [
+              Row(
+                children: [
+                  _DetailIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Detalle del caso',
+                          style: TextStyle(
+                            color: MRSColors.muted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          widget.folio,
+                          style: const TextStyle(
+                            color: MRSColors.text,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _DetailIconButton(icon: Icons.refresh_rounded, onTap: _load),
+                ],
+              ),
+              const SizedBox(height: 22),
+              MRSkeleton(
+                enabled: _loading,
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF091638), Color(0xFF23448E)],
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x2911245C),
+                        blurRadius: 30,
+                        offset: Offset(0, 16),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: -45,
+                        top: -70,
+                        child: Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: .05),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: .08),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: .10),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                                child: Text(
+                                  widget.folio,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: criticColor.withValues(alpha: .20),
+                                  borderRadius: BorderRadius.circular(99),
+                                  border: Border.all(
+                                    color: criticColor.withValues(alpha: .45),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Criticidad $critic',
+                                  style: TextStyle(
+                                    color:
+                                        criticColor == MRSColors.warningText
+                                            ? const Color(0xFFFFD071)
+                                            : criticColor ==
+                                                MRSColors.dangerText
+                                            ? const Color(0xFFFFA5AD)
+                                            : const Color(0xFF77E0B2),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 26),
+                          Text(
+                            equipmentName.isEmpty
+                                ? 'Equipo relacionado'
+                                : equipmentName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 27,
+                              height: 1.08,
+                              letterSpacing: -1,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            [
+                              if (marca.isNotEmpty) marca,
+                              if (site.isNotEmpty) site,
+                              if (sn.isNotEmpty) 'SN $sn',
+                            ].join('  ·  '),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: .66),
+                              fontSize: 12,
+                              height: 1.35,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 26),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  proc.trim().isEmpty ? 'En revisión' : proc,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '${(progress * 100).round()}%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 9),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(99),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 7,
+                              backgroundColor: Colors.white.withValues(
+                                alpha: .12,
+                              ),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                MRSColors.teal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (!_loading && action != null) ...[
+                const SizedBox(height: 18),
+                _Card(
+                  color: MRSColors.warningBg,
+                  borderColor: const Color(0xFFFFE1A6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const MRIconBox(
+                            icon: Icons.bolt_rounded,
+                            color: MRSColors.warningText,
+                            background: Color(0xFFFFE9BC),
+                            size: 46,
+                          ),
+                          const SizedBox(width: 13),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Necesitamos algo de ti',
+                                  style: TextStyle(
+                                    color: MRSColors.warningText,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  action,
+                                  style: const TextStyle(
+                                    color: MRSColors.text,
+                                    fontSize: 16,
+                                    height: 1.2,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _handlePrimaryAction,
+                          icon: const Icon(Icons.arrow_forward_rounded),
+                          label: const Text('Resolver acción'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              MRSkeleton(
+                enabled: _loading,
+                child: _Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _DetailSectionTitle(
+                        icon: Icons.inventory_2_outlined,
+                        title: 'Equipo relacionado',
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 104,
+                            height: 92,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: MRSColors.blueSoft,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.contain,
+                              errorBuilder:
+                                  (_, __, ___) => const Icon(
+                                    Icons.dns_rounded,
+                                    color: MRSColors.accent,
+                                    size: 36,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  equipmentName.isEmpty
+                                      ? 'Equipo'
+                                      : equipmentName,
+                                  style: const TextStyle(
+                                    color: MRSColors.text,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  sn.isEmpty ? 'Sin número de serie' : 'SN $sn',
+                                  style: const TextStyle(
+                                    color: MRSColors.muted,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  height: 24,
+                                  child: Image.network(
+                                    brandUrl,
+                                    alignment: Alignment.centerLeft,
+                                    fit: BoxFit.contain,
+                                    errorBuilder:
+                                        (_, __, ___) => Text(
+                                          marca,
+                                          style: const TextStyle(
+                                            color: MRSColors.text,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              MRSkeleton(
+                enabled: _loading,
+                child: _Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _DetailSectionTitle(
+                        icon: Icons.notes_rounded,
+                        title: 'Resumen del caso',
+                      ),
+                      const SizedBox(height: 18),
+                      _NarrativeBlock(
+                        label: 'Descripción reportada',
+                        value:
+                            desc.isEmpty ? 'Descripción no disponible.' : desc,
+                        icon: Icons.chat_bubble_outline_rounded,
+                      ),
+                      const SizedBox(height: 14),
+                      _NarrativeBlock(
+                        label: 'Diagnóstico del especialista',
+                        value:
+                            diag.isEmpty
+                                ? 'El diagnóstico está en proceso.'
+                                : diag,
+                        icon: Icons.medical_information_outlined,
+                        accent: MRSColors.teal,
+                        background: MRSColors.tealSoft,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              MRSkeleton(
+                enabled: _loading,
+                child: _Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _DetailSectionTitle(
+                        icon: Icons.fact_check_outlined,
+                        title: 'Datos del ticket',
+                      ),
+                      const SizedBox(height: 16),
+                      _InfoRow(
+                        icon: Icons.category_outlined,
+                        label: 'Tipo',
+                        value: ticketType,
+                      ),
+                      const SizedBox(height: 13),
+                      _InfoRow(
+                        icon: Icons.flag_outlined,
+                        label: 'Proceso',
+                        value: proc.isEmpty ? 'En revisión' : proc,
+                      ),
+                      const SizedBox(height: 13),
+                      _InfoRow(
+                        icon: Icons.schedule_rounded,
+                        label: 'Creado',
+                        value: creation,
+                      ),
+                      const SizedBox(height: 13),
+                      _InfoRow(
+                        icon: Icons.engineering_outlined,
+                        label: 'Asignado',
+                        value: assignment,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ignore: unused_element
+  Widget _legacyBuild(BuildContext context) {
     // Mapeo esperado del PHP (ajusta nombres si tu JSON usa otros)
     final eqModelo = _s(d['eqModelo']);
     final eqVersion = _s(d['eqVersion']);
@@ -466,7 +967,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       AspectRatio(
                         aspectRatio: 16 / 7,
                         child: Container(
-                          color: const Color(0xFFF6F8FF),
+                          color: const Color(0xFFF7F9FC),
 
                           child: Image.network(
                             imgEquipo,
@@ -620,7 +1121,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 8,
-                          backgroundColor: const Color(0xFFE3E7FF),
+                          backgroundColor: const Color(0xFFEAF0FF),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             mrPurple,
                           ),
@@ -812,22 +1313,146 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
 // ----------- UI small widgets -----------
 
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-  final Widget child;
+class _DetailIconButton extends StatelessWidget {
+  const _DetailIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: MRSColors.surface,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: MRSColors.border),
+        ),
+        child: Icon(icon, color: MRSColors.primary, size: 21),
+      ),
+    );
+  }
+}
+
+class _DetailSectionTitle extends StatelessWidget {
+  const _DetailSectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        MRIconBox(
+          icon: icon,
+          color: MRSColors.accent,
+          background: MRSColors.blueSoft,
+          size: 40,
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: MRSColors.text,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NarrativeBlock extends StatelessWidget {
+  const _NarrativeBlock({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.accent = MRSColors.accent,
+    this.background = MRSColors.blueSoft,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color accent;
+  final Color background;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: background.withValues(alpha: .62),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: accent, size: 20),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: MRSColors.text,
+                    fontSize: 13,
+                    height: 1.45,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card({
+    required this.child,
+    this.color = MRSColors.surface,
+    this.borderColor = MRSColors.border,
+  });
+  final Widget child;
+  final Color color;
+  final Color borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: MRSColors.shadow,
+            blurRadius: 24,
+            offset: Offset(0, 12),
           ),
         ],
       ),
@@ -876,16 +1501,33 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF9A93AD)),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-        const SizedBox(width: 10),
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: MRSColors.blueSoft,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, size: 17, color: MRSColors.accent),
+        ),
+        const SizedBox(width: 11),
+        Text(
+          label,
+          style: const TextStyle(
+            color: MRSColors.muted,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 12),
         Expanded(
           child: Text(
             value,
+            textAlign: TextAlign.right,
             style: const TextStyle(
-              color: Color(0xFF7D7690),
-              fontWeight: FontWeight.w700,
+              color: MRSColors.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
             ),
             overflow: TextOverflow.ellipsis,
           ),

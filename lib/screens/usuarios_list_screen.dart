@@ -3,6 +3,8 @@ import 'package:mrsos/screens/usuario_detail_screen.dart';
 import 'package:mrsos/services/app_http.dart';
 import 'package:mrsos/widget/mr_skeleton.dart';
 import 'package:mrsos/services/usuarios_service.dart';
+import 'package:mrsos/widget/colors.dart';
+import 'package:mrsos/widget/mr_theme.dart';
 
 class UsuariosTab extends StatefulWidget {
   const UsuariosTab({super.key});
@@ -101,41 +103,48 @@ class _UsuariosTabState extends State<UsuariosTab> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFF7F4FF), Colors.white],
-              ),
-            ),
-          ),
-          ListView(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 110),
+    final userCount = _groups.fold<int>(
+      0,
+      (total, group) =>
+          total +
+          (group['usuarios'] is List ? (group['usuarios'] as List).length : 0),
+    );
+
+    return ColoredBox(
+      color: MRSColors.bg,
+      child: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
             children: [
-              const SizedBox(height: 18),
-              const Center(
-                child: Text(
-                  'Usuarios Grupos/Sedes',
-                  style: TextStyle(
-                    fontSize: 18.5,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1F1B2E),
-                  ),
-                ),
+              MRPageIntro(
+                eyebrow: 'Control de acceso',
+                title: 'Usuarios de clientes',
+                subtitle:
+                    'Administra a las personas que colaboran dentro de cada cuenta y sede.',
+                trailing: _UsersCountBadge(count: _loading ? null : userCount),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 22),
 
               // Search bar + menu (como mock)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFEAF6),
-                  borderRadius: BorderRadius.circular(18),
+                  color: MRSColors.surface,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: MRSColors.border),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: MRSColors.shadow,
+                      blurRadius: 24,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -212,7 +221,33 @@ class _UsuariosTabState extends State<UsuariosTab> {
               ],
             ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UsersCountBadge extends StatelessWidget {
+  const _UsersCountBadge({required this.count});
+
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .11),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: Colors.white.withValues(alpha: .12)),
+      ),
+      child: Text(
+        count == null ? '—' : '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -459,7 +494,7 @@ class _GroupHeader extends StatelessWidget {
       title.isEmpty ? 'Sede' : title,
       style: const TextStyle(
         fontWeight: FontWeight.w900,
-        color: Color(0xFF1F1B2E),
+        color: Color(0xFF0B1739),
       ),
     );
   }
@@ -468,8 +503,6 @@ class _GroupHeader extends StatelessWidget {
 class _UserCard extends StatelessWidget {
   const _UserCard({required this.u});
   final Map<String, dynamic> u;
-
-  static const mrPurple = Color.fromARGB(255, 15, 24, 76);
 
   @override
   Widget build(BuildContext context) {
@@ -481,13 +514,9 @@ class _UserCard extends StatelessWidget {
     } else {
       avatar = 'avatar_default';
     }
-    print(u['usId']);
-
     // si tu backend guarda en /img/Usuario/<archivo>
     final avatarUrl =
         avatar.isEmpty ? '' : 'https://mrsos.com.mx/img/Usuario/$avatar.jpg';
-    print(avatarUrl);
-
     return GestureDetector(
       onTap: () {
         // Acción al tocar la tarjeta del usuario (si es necesario)
@@ -500,22 +529,23 @@ class _UserCard extends StatelessWidget {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.92),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
+          color: MRSColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: MRSColors.border),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: MRSColors.shadow,
               blurRadius: 22,
-              offset: const Offset(0, 12),
+              offset: Offset(0, 10),
             ),
           ],
         ),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 22,
+              radius: 25,
               backgroundColor: const Color.fromARGB(255, 230, 232, 255),
               backgroundImage:
                   (avatarUrl.isNotEmpty)
@@ -529,7 +559,7 @@ class _UserCard extends StatelessWidget {
                   avatarUrl.isEmpty
                       ? const Icon(
                         Icons.person_rounded,
-                        color: Color(0xFF200F4C),
+                        color: Color(0xFF0B1B46),
                       )
                       : null,
             ),
@@ -540,18 +570,35 @@ class _UserCard extends StatelessWidget {
                 children: [
                   Text(
                     nombre,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     rol.isEmpty ? '' : rol,
                     style: const TextStyle(
-                      color: Color(0xFF6B667A),
+                      color: Color(0xFF71809D),
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: MRSColors.blueSoft,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: MRSColors.accent,
               ),
             ),
           ],

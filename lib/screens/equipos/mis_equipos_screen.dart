@@ -3,6 +3,8 @@ import 'package:mrsos/screens/equipos/poliza_equipos_screen.dart';
 import 'package:mrsos/services/app_http.dart';
 import 'package:mrsos/services/equipos_service.dart';
 import 'package:mrsos/widget/mr_skeleton.dart';
+import 'package:mrsos/widget/colors.dart';
+import 'package:mrsos/widget/mr_theme.dart';
 import 'equipo_detalle_screen.dart';
 
 class MisEquiposTab extends StatefulWidget {
@@ -123,47 +125,39 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
   @override
   Widget build(BuildContext context) {
     final hasVencidas = !loading && _hasVencidas();
+    final visiblePolizas =
+        _polizas()
+            .whereType<Map>()
+            .map((p) => Map<String, dynamic>.from(p))
+            .where((p) => _polizaTotalEquipos(p) > 0)
+            .toList();
+    final totalEquipos = visiblePolizas.fold<int>(
+      0,
+      (total, p) => total + _polizaTotalEquipos(p),
+    );
 
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: Stack(
-        children: [
-          // Fondo suave como tu mock
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFF7F4FF), Colors.white],
-              ),
-            ),
-          ),
-          ListView(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 110),
+    return ColoredBox(
+      color: MRSColors.bg,
+      child: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
             children: [
-              const SizedBox(height: 36),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.article_rounded,
-                    color: Colors.black,
-                    size: 26,
-                  ),
-                  const SizedBox(width: 10),
-                  const Center(
-                    child: Text(
-                      'Mis equipos',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1F1B2E),
-                      ),
-                    ),
-                  ),
-                ],
+              const MRPageIntro(
+                eyebrow: 'Activos bajo cobertura',
+                title: 'Mis equipos',
+                subtitle:
+                    'Consulta equipos asociados a tus pólizas, sedes y números de serie.',
               ),
-
-              const SizedBox(height: 14),
+              const SizedBox(height: 22),
+              _EquipmentSummary(
+                loading: loading,
+                equipos: totalEquipos,
+                polizas: visiblePolizas.length,
+              ),
+              const SizedBox(height: 18),
 
               _PillsToggle(
                 leftText: 'Activa',
@@ -203,6 +197,101 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EquipmentSummary extends StatelessWidget {
+  const _EquipmentSummary({
+    required this.loading,
+    required this.equipos,
+    required this.polizas,
+  });
+
+  final bool loading;
+  final int equipos;
+  final int polizas;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _SummaryCard(
+            icon: Icons.dns_outlined,
+            label: 'Equipos visibles',
+            value: loading ? '—' : '$equipos',
+            color: MRSColors.accent,
+            background: MRSColors.blueSoft,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _SummaryCard(
+            icon: Icons.shield_outlined,
+            label: 'Pólizas',
+            value: loading ? '—' : '$polizas',
+            color: MRSColors.teal,
+            background: MRSColors.tealSoft,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.background,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return MRSectionCard(
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        children: [
+          MRIconBox(icon: icon, color: color, background: background, size: 42),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  maxLines: 2,
+                  style: const TextStyle(
+                    color: MRSColors.muted,
+                    fontSize: 9.5,
+                    height: 1.1,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: MRSColors.text,
+                    fontSize: 25,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -278,7 +367,7 @@ class _Pill extends StatelessWidget {
     final bg =
         active
             ? const Color.fromARGB(255, 50, 77, 230)
-            : const Color(0xFFEDE8FF);
+            : const Color(0xFFEAF0FF);
     final fg = active ? Colors.white : const Color.fromARGB(255, 50, 77, 230);
 
     // Disabled: más gris y sin interacción
@@ -377,7 +466,7 @@ class _PolizaSection extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F1B2E),
+                  color: Color(0xFF0B1739),
                 ),
               ),
             ),
@@ -397,7 +486,7 @@ class _PolizaSection extends StatelessWidget {
 
         // ✅ LISTA HORIZONTAL (una card grande por equipo)
         SizedBox(
-          height: 460, // ajusta si quieres más/menos alto
+          height: 420,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -427,18 +516,19 @@ class _PolizaSection extends StatelessWidget {
 
               return InkWell(
                 onTap: peId == 0 ? null : () => onTapEquipo(peId),
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(28),
                 child: Container(
-                  width: 330,
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  width: 322,
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: [
+                    color: MRSColors.surface,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: MRSColors.border),
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 26,
-                        offset: const Offset(0, 14),
+                        color: MRSColors.shadow,
+                        blurRadius: 28,
+                        offset: Offset(0, 14),
                       ),
                     ],
                   ),
@@ -448,21 +538,23 @@ class _PolizaSection extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(18),
                         child: AspectRatio(
-                          aspectRatio: 16 / 6.2,
-                          child: Image.network(
-                            eqImg,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) {
-                              return Container(
-                                color: Colors.white,
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.dns_rounded,
-                                  size: 40,
-                                  color: Color(0xFFE0DBF7),
-                                ),
-                              );
-                            },
+                          aspectRatio: 16 / 6.8,
+                          child: Container(
+                            color: MRSColors.blueSoft.withValues(alpha: .55),
+                            padding: const EdgeInsets.all(12),
+                            child: Image.network(
+                              eqImg,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) {
+                                return const Center(
+                                  child: Icon(
+                                    Icons.dns_rounded,
+                                    size: 42,
+                                    color: MRSColors.accent,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -471,11 +563,11 @@ class _PolizaSection extends StatelessWidget {
 
                       Text(
                         modelo.isEmpty ? 'Equipo' : modelo,
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.left,
                         style: const TextStyle(
-                          fontSize: 18.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1F1B2E),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0B1739),
                         ),
                       ),
 
@@ -487,15 +579,15 @@ class _PolizaSection extends StatelessWidget {
                           if (ff.isNotEmpty) ff,
                           if (sede.isNotEmpty) sede,
                         ].join(' - '),
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.left,
                         style: const TextStyle(
                           fontSize: 14.5,
-                          color: Color(0xFF6B667A),
+                          color: Color(0xFF71809D),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
 
                       _ChipBlue(text: chipPoliza),
                       const SizedBox(height: 6),
@@ -514,7 +606,7 @@ class _PolizaSection extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF1F1B2E),
+                            color: Color(0xFF0B1739),
                           ),
                         ),
 
@@ -532,7 +624,7 @@ class _PolizaSection extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 30,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF1F1B2E),
+                                color: Color(0xFF0B1739),
                               ),
                             );
                           },
@@ -548,7 +640,7 @@ class _PolizaSection extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1F1B2E),
+                            color: Color(0xFF0B1739),
                           ),
                         ),
 
@@ -560,7 +652,7 @@ class _PolizaSection extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11.5,
-                            color: Color(0xFF1F1B2E),
+                            color: Color(0xFF0B1739),
                             fontWeight: FontWeight.w700,
                           ),
                         ),

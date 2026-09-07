@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:mrsos/screens/onboarding_flow_screen.dart';
 import '../services/app_http.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
 import '../widget/MRPrimaryButton.dart';
+import '../widget/colors.dart';
 import '../services/session_store.dart';
 
 class WelcomeLoginScreen extends StatefulWidget {
-  const WelcomeLoginScreen({super.key});
+  const WelcomeLoginScreen({super.key, this.dio});
+
+  final Dio? dio;
 
   @override
   State<WelcomeLoginScreen> createState() => _WelcomeLoginScreenState();
@@ -27,13 +31,12 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
   void initState() {
     super.initState();
     _auth = AuthService(
-      dio: AppHttp.I.dio,
+      dio: widget.dio ?? AppHttp.I.dio,
       loginPath: '/login_app.php',
     ); // ✅ tu php real
   }
 
-  static const Color subInk = Color(0xFF6B667A);
-  static const Color iconPurple = Color.fromARGB(255, 71, 74, 255);
+  static const Color iconPurple = MRSColors.accent;
 
   @override
   void dispose() {
@@ -147,148 +150,197 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF3F0FF),
-              Color(0xFFFFFFFF),
-              Color(0xFFF7F6FF),
-              Color(0xFFFFFFFF),
-            ],
-            stops: [0.0, 0.40, 0.75, 1.0],
-          ),
-        ),
+      backgroundColor: MRSColors.bg,
+      body: SafeArea(
+        bottom: false,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  22,
-                  18,
-                  22,
-                  18 + (bottomInset > 0 ? 14 : 0),
-                ),
+                padding: EdgeInsets.only(bottom: 24 + bottomInset),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 26),
-                          Hero(
-                            tag: 'mr-logo',
-                            child: Image.asset(
-                              'assets/images/logo MR.webp',
-                              height: 64,
-                              fit: BoxFit.contain,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          constraints: const BoxConstraints(minHeight: 250),
+                          padding: const EdgeInsets.fromLTRB(24, 26, 24, 34),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                MRSColors.primaryDark,
+                                Color(0xFF18367E),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(34),
                             ),
                           ),
-
-                          const SizedBox(height: 18),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              'Para empezar, debemos de iniciar sesión,\n'
-                              'los datos deberán de estar en\n'
-                              'tu correo electrónico con el que te contactamos\n'
-                              'en MRSOS',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13.2,
-                                height: 1.35,
-                                fontWeight: FontWeight.w500,
-                                color: subInk,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 26),
-
-                          _InputCard(
-                            label: 'Usuario',
-                            controller: _userCtrl,
-                            icon: Icons.badge_outlined,
-                            iconBg: iconPurple,
-                            keyboardType: TextInputType.number,
-                            validator:
-                                (v) =>
-                                    (v ?? '').trim().isEmpty
-                                        ? 'Ingresa tu usuario'
-                                        : null,
-                            onSubmitted:
-                                (_) => FocusScope.of(context).nextFocus(),
-                          ),
-                          const SizedBox(height: 16),
-
-                          _InputCard(
-                            label: 'Contraseña',
-                            controller: _passCtrl,
-                            icon: Icons.lock_outline_rounded,
-                            iconBg: iconPurple,
-                            obscureText: _obscure,
-                            validator:
-                                (v) =>
-                                    (v ?? '').isEmpty
-                                        ? 'Ingresa tu contraseña'
-                                        : null,
-                            suffix: IconButton(
-                              onPressed:
-                                  () => setState(() => _obscure = !_obscure),
-                              icon: Icon(
-                                _obscure
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: Colors.black.withOpacity(.45),
-                              ),
-                            ),
-                            onSubmitted: (_) => _loading ? null : _doLogin(),
-                          ),
-
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                foregroundColor: subInk,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Hero(
+                                tag: 'mr-logo',
+                                child: Image.asset(
+                                  'assets/images/MRlogoB.png',
+                                  height: 48,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
-                              child: const Text(
-                                'Olvidé mi contraseña',
+                              const SizedBox(height: 34),
+                              const Text(
+                                'Tu operación,\nsiempre en línea.',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  color: Colors.white,
+                                  fontSize: 36,
+                                  height: 1.02,
+                                  letterSpacing: -1,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Tickets, equipos y servicio coordinados desde un solo espacio.',
+                                style: TextStyle(
+                                  color: Color(0xFFC7D3EF),
+                                  fontSize: 14,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(22, 28, 22, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Row(
+                                children: [
+                                  SizedBox(
+                                    width: 34,
+                                    child: Divider(
+                                      color: MRSColors.teal,
+                                      thickness: 3,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'ACCESO SEGURO',
+                                    style: TextStyle(
+                                      color: MRSColors.muted,
+                                      letterSpacing: 1.6,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              const Text(
+                                'Bienvenido de vuelta',
+                                style: TextStyle(
+                                  color: MRSColors.text,
+                                  fontSize: 30,
+                                  height: 1.05,
+                                  letterSpacing: -.7,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Inicia sesión para entrar a tu espacio de trabajo.',
+                                style: TextStyle(
+                                  color: MRSColors.muted,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _InputCard(
+                                label: 'Número de usuario o correo',
+                                controller: _userCtrl,
+                                icon: Icons.person_outline_rounded,
+                                iconBg: iconPurple,
+                                keyboardType: TextInputType.emailAddress,
+                                validator:
+                                    (v) =>
+                                        (v ?? '').trim().isEmpty
+                                            ? 'Ingresa tu usuario'
+                                            : null,
+                                onSubmitted:
+                                    (_) => FocusScope.of(context).nextFocus(),
+                              ),
+                              const SizedBox(height: 14),
+                              _InputCard(
+                                label: 'Contraseña',
+                                controller: _passCtrl,
+                                icon: Icons.lock_outline_rounded,
+                                iconBg: iconPurple,
+                                obscureText: _obscure,
+                                validator:
+                                    (v) =>
+                                        (v ?? '').isEmpty
+                                            ? 'Ingresa tu contraseña'
+                                            : null,
+                                suffix: IconButton(
+                                  onPressed:
+                                      () =>
+                                          setState(() => _obscure = !_obscure),
+                                  icon: Icon(
+                                    _obscure
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: MRSColors.muted,
+                                  ),
+                                ),
+                                onSubmitted:
+                                    (_) => _loading ? null : _doLogin(),
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {},
+                                  child: const Text(
+                                    '¿Olvidaste tu contraseña?',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              MRPrimaryButton(
+                                text:
+                                    _loading
+                                        ? 'Validando…'
+                                        : 'Entrar a MR Support One Service',
+                                color: MRSColors.primary,
+                                icon: Icons.login_rounded,
+                                onPressed: _loading ? null : _doLogin,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                '¿Necesitas ayuda? Contacta a soporte',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: MRSColors.muted,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                          const Spacer(),
-                          const SizedBox(height: 10),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               );
             },
-          ),
-        ),
-      ),
-
-      bottomNavigationBar: SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.fromLTRB(22, 10, 22, 14 + bottomInset),
-          child: MRPrimaryButton(
-            text: _loading ? 'Validando…' : 'Iniciar Sesión',
-            onPressed: _loading ? () {} : _doLogin,
           ),
         ),
       ),
@@ -319,20 +371,20 @@ class _InputCard extends StatelessWidget {
   final TextInputType? keyboardType;
   final void Function(String)? onSubmitted;
 
-  static const Color ink = Color(0xFF1D1B2A);
-  static const Color border = Color(0xFFF0EFF6);
+  static const Color ink = MRSColors.text;
+  static const Color border = MRSColors.border;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
         border: Border.all(color: border),
@@ -345,7 +397,7 @@ class _InputCard extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: iconBg.withOpacity(0.14),
+                color: MRSColors.blueSoft,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: iconBg, size: 18),

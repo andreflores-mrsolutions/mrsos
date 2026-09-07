@@ -106,7 +106,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
           style: const TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w400,
-            color: Color(0xFF1F1B2E),
+            color: Color(0xFF0B1739),
           ),
           children: [
             TextSpan(
@@ -117,7 +117,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
               text: v,
               style: const TextStyle(
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF6B667A),
+                color: Color(0xFF71809D),
               ),
             ),
           ],
@@ -221,7 +221,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                               sn.isEmpty ? '' : 'SN: $sn',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B667A),
+                                color: Color(0xFF71809D),
                               ),
                             ),
                             const Spacer(),
@@ -235,7 +235,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF6B667A),
+                                  color: Color(0xFF71809D),
                                 ),
                               ),
                           ],
@@ -273,7 +273,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF6F8FF),
+                    color: const Color(0xFFF7F9FC),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
@@ -308,7 +308,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                           'Tipo de Póliza: $pcTipo',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F1B2E),
+                            color: Color(0xFF0B1739),
                           ),
                         ),
                     ],
@@ -336,7 +336,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F1B2E),
+                    color: Color(0xFF0B1739),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -375,7 +375,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                           width: 210,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF6F8FF),
+                            color: const Color(0xFFF7F9FC),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(color: cc, width: 2),
                           ),
@@ -386,7 +386,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                                 folio,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1F1B2E),
+                                  color: Color(0xFF0B1739),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -413,7 +413,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF6B667A),
+                                    color: Color(0xFF71809D),
                                   ),
                                 ),
                               if (est.isNotEmpty)
@@ -422,7 +422,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1F1B2E),
+                                    color: Color(0xFF0B1739),
                                   ),
                                 ),
                             ],
@@ -482,7 +482,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                               peDesc,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B667A),
+                                color: Color(0xFF71809D),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -504,7 +504,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                               eqDesc,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B667A),
+                                color: Color(0xFF71809D),
                               ),
                             ),
                           ],
@@ -513,7 +513,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                     ),
                     Tooltip(
                       padding: const EdgeInsets.all(0),
-                      decoration: const BoxDecoration(color: Color(0xffE7E5FB)),
+                      decoration: const BoxDecoration(color: Color(0xFFEAF0FF)),
                       triggerMode: TooltipTriggerMode.tap,
                       showDuration: const Duration(seconds: 5),
                       richMessage: WidgetSpan(
@@ -608,7 +608,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                     ),
                     Tooltip(
                       padding: const EdgeInsets.all(0),
-                      decoration: const BoxDecoration(color: Color(0xffE7E5FB)),
+                      decoration: const BoxDecoration(color: Color(0xFFEAF0FF)),
                       triggerMode: TooltipTriggerMode.tap,
                       showDuration: const Duration(seconds: 5),
                       richMessage: WidgetSpan(
@@ -649,7 +649,7 @@ class _Pill extends StatelessWidget {
   const _Pill({
     required this.text,
     this.bg = const Color.fromARGB(255, 230, 232, 255),
-    this.fg = const Color(0xFF200F4C),
+    this.fg = const Color(0xFF0B1B46),
   });
   final String text;
   final Color bg;

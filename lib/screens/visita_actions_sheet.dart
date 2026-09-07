@@ -19,7 +19,7 @@ class VisitaAccionesSheet extends StatelessWidget {
   final Map<String, dynamic> ticket;
   final VisitaAccionesModo modo;
 
-  static const purple = Color(0xFF4F46E5);
+  static const purple = Color(0xFF3563FF);
   static const danger = Color(0xFFFF6B6B);
 
   String _s(dynamic v) => (v ?? '').toString();

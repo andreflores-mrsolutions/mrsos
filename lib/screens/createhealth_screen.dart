@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/session_store.dart';
 import 'package:mrsos/services/app_http.dart'; // tu singleton dio
+import 'package:mrsos/widget/colors.dart';
+import 'package:mrsos/widget/mr_theme.dart';
 
 class HealthCheckScreen extends StatefulWidget {
   const HealthCheckScreen({super.key, required this.baseUrl});
@@ -194,23 +196,66 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FF),
+      backgroundColor: MRSColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black,
+        backgroundColor: MRSColors.bg,
         title: const Text(
           'Health Check',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body:
           loading
               ? const Center(child: CircularProgressIndicator())
               : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
                 children: [
+                  const MRPageIntro(
+                    eyebrow: 'Revisión preventiva',
+                    title: 'Programa un Health Check',
+                    subtitle:
+                        'Selecciona la sede, los equipos y una ventana para revisar tu operación.',
+                  ),
+                  const SizedBox(height: 20),
+                  const MRSectionCard(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        MRIconBox(
+                          icon: Icons.health_and_safety_outlined,
+                          color: MRSColors.teal,
+                          background: MRSColors.tealSoft,
+                        ),
+                        SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Health Check',
+                                style: TextStyle(
+                                  color: MRSColors.text,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Programa una revisión preventiva',
+                                style: TextStyle(
+                                  color: MRSColors.muted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.check_circle_rounded, color: MRSColors.teal),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
                   _card(
                     Row(
                       children: [
@@ -405,7 +450,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                     height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: mrPurple,
+                        backgroundColor: MRSColors.teal,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -413,7 +458,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                       ),
                       onPressed: sending ? null : _submit,
                       child: Text(
-                        sending ? 'Creando…' : 'Crear Ticket',
+                        sending ? 'Programando…' : 'Programar Health Check',
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                     ),
@@ -428,12 +473,13 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: MRSColors.border),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
+            color: MRSColors.shadow,
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),

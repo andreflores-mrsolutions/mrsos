@@ -84,7 +84,7 @@ class _HealthCheckDetailScreenState extends State<HealthCheckDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FF),
+      backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -217,7 +217,7 @@ class _HealthCheckDetailScreenState extends State<HealthCheckDetailScreen> {
                                       'SN: $sn',
                                       style: const TextStyle(
                                         fontSize: 12.5,
-                                        color: Color(0xFF6B667A),
+                                        color: Color(0xFF71809D),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),

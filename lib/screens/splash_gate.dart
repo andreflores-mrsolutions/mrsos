@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mrsos/main.dart';
-import 'package:mrsos/services/push_router.dart';
 import 'package:video_player/video_player.dart';
 
 import 'welcome_screen.dart';

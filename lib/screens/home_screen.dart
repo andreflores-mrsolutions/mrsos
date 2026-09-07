@@ -9,32 +9,13 @@ import 'package:mrsos/screens/ticket_detail_screen.dart';
 import 'package:mrsos/screens/tickets_sedes_screen.dart';
 import 'package:mrsos/screens/user_profile_screen.dart';
 import 'package:mrsos/screens/usuarios_list_screen.dart';
-import 'package:mrsos/services/push_router.dart';
-import 'package:mrsos/services/push_service.dart';
+import 'package:mrsos/services/local_notify.dart';
 import 'package:mrsos/services/session_store.dart';
 import '../services/app_http.dart';
 import '../services/index_service.dart';
+import '../widget/colors.dart';
 import '../widget/mr_skeleton.dart';
-
-class MRSColors {
-  static const Color primary = Color(0xFF200F4C);
-  static const Color primaryDark = Color(0xFF160A38);
-  static const Color accent = Color(0xFF1F6FFF);
-  static const Color bg = Color(0xFFF5F7FB);
-  static const Color surface = Colors.white;
-  static const Color soft = Color(0xFFF6F7FB);
-  static const Color border = Color(0x140F172A);
-  static const Color text = Color(0xFF0F172A);
-  static const Color muted = Color(0xFF64748B);
-  static const Color successBg = Color(0xFFDCFCE7);
-  static const Color successText = Color(0xFF166534);
-  static const Color warningBg = Color(0xFFFFF7ED);
-  static const Color warningText = Color(0xFFC2410C);
-  static const Color dangerBg = Color(0xFFFEF2F2);
-  static const Color dangerText = Color(0xFFB91C1C);
-  static const Color infoBg = Color(0xFFEFF6FF);
-  static const Color infoText = Color(0xFF1D4ED8);
-}
+import '../widget/mr_theme.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
@@ -57,8 +38,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    PushRouter.openIfAny();
-
     _tabs = [
       HomeTab(usId: widget.usId, userName: widget.userName),
       const MisEquiposTab(),
@@ -94,11 +73,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      leading: const Icon(
-                        Icons.add_circle_outline,
-                        color: MRSColors.primary,
+                      leading: const MRIconBox(
+                        icon: Icons.support_agent_rounded,
+                        color: MRSColors.teal,
+                        background: MRSColors.tealSoft,
                       ),
-                      title: const Text('Ticket Servicio'),
+                      title: const Text(
+                        'Ticket de soporte',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: const Text(
+                        'Incidente, falla o solicitud técnica',
+                      ),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.of(context).push(
@@ -112,11 +98,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(
-                        Icons.health_and_safety_outlined,
-                        color: MRSColors.primary,
+                      leading: const MRIconBox(
+                        icon: Icons.health_and_safety_outlined,
+                        color: MRSColors.accent,
+                        background: MRSColors.blueSoft,
                       ),
-                      title: const Text('Health Check'),
+                      title: const Text(
+                        'Health Check',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: const Text('Programa una revisión preventiva'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.of(context).push(
@@ -148,7 +139,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       body: IndexedStack(index: _tabIndex, children: _tabs),
       floatingActionButton: FloatingActionButton(
         onPressed: _openFabMenu,
-        backgroundColor: MRSColors.primary,
+        backgroundColor: MRSColors.teal,
         foregroundColor: Colors.white,
         elevation: 8,
         child: const Icon(Icons.add_rounded),
@@ -165,17 +156,48 @@ class _BottomBar extends StatelessWidget {
   final int activeIndex;
   final ValueChanged<int> onTap;
 
-  Widget _btn({required int index, required IconData icon}) {
+  Widget _btn({
+    required int index,
+    required IconData icon,
+    required String label,
+  }) {
     final active = activeIndex == index;
-    return InkWell(
-      onTap: () => onTap(index),
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Icon(
-          icon,
-          size: 26,
-          color: active ? MRSColors.primary : const Color(0xFF94A3B8),
+    return Expanded(
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 38,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: active ? MRSColors.blueSoft : Colors.transparent,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  icon,
+                  size: 21,
+                  color: active ? MRSColors.accent : MRSColors.muted,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: active ? MRSColors.primary : MRSColors.muted,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -184,10 +206,10 @@ class _BottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      height: 74,
+      height: 82,
       color: Colors.white,
-      elevation: 10,
-      shadowColor: const Color(0x120F172A),
+      elevation: 0,
+      shadowColor: MRSColors.shadow,
       shape: const CircularNotchedRectangle(),
       notchMargin: 10,
       child: Padding(
@@ -195,11 +217,11 @@ class _BottomBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _btn(index: 0, icon: Icons.home_rounded),
-            _btn(index: 1, icon: Icons.computer_rounded),
+            _btn(index: 0, icon: Icons.home_rounded, label: 'Resumen'),
+            _btn(index: 1, icon: Icons.dns_outlined, label: 'Equipos'),
             const SizedBox(width: 44),
-            _btn(index: 2, icon: Icons.description_rounded),
-            _btn(index: 3, icon: Icons.group_rounded),
+            _btn(index: 2, icon: Icons.description_outlined, label: 'Hojas'),
+            _btn(index: 3, icon: Icons.group_outlined, label: 'Usuarios'),
           ],
         ),
       ),
@@ -222,7 +244,6 @@ class _HomeTabState extends State<HomeTab> {
 
   String _avatarUrl = '';
   bool _loading = true;
-  bool _refreshing = false;
 
   Map<String, dynamic> indexData = {};
   Map<String, dynamic> stats = {};
@@ -272,7 +293,6 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Future<void> _onRefresh() async {
-    setState(() => _refreshing = true);
     try {
       await _loadAll();
     } catch (e) {
@@ -285,20 +305,18 @@ class _HomeTabState extends State<HomeTab> {
         );
         return;
       }
-    } finally {
-      if (mounted) setState(() => _refreshing = false);
     }
   }
 
   Future<void> _onNotificationPressed() async {
-    final granted = await PushService.init();
+    final granted = await LocalNotify.requestPermission();
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           granted
-              ? 'Notificaciones activadas correctamente.'
+              ? 'Notificaciones locales activadas correctamente.'
               : 'No se otorgaron permisos de notificaciones.',
         ),
       ),
@@ -334,7 +352,7 @@ class _HomeTabState extends State<HomeTab> {
           displacement: 18,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 118),
             children: [
               _TopHeader(
                 name: widget.userName,
@@ -768,126 +786,156 @@ class _TopHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasAvatar = (avatarUrl ?? '').isNotEmpty;
     final img = (!loading && hasAvatar) ? NetworkImage(avatarUrl!) : null;
+    final hour = DateTime.now().hour;
+    final salutation =
+        hour < 12
+            ? 'Buenos días'
+            : hour < 19
+            ? 'Buenas tardes'
+            : 'Buenas noches';
+    final displayName = name.trim().isEmpty ? 'Usuario' : name.trim();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: MRSColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: MRSColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A0F172A),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+    return MRSkeleton(
+      enabled: loading,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const MRIconBox(
+                icon: Icons.grid_view_rounded,
+                color: MRSColors.accent,
+                background: MRSColors.blueSoft,
+                size: 44,
+              ),
+              const SizedBox(width: 11),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Portal cliente',
+                      style: TextStyle(
+                        color: MRSColors.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Espacio de trabajo',
+                      style: TextStyle(
+                        color: MRSColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _HeaderAction(
+                icon: Icons.notifications_none_rounded,
+                onTap: onNotificationsTap,
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => UserProfileScreen(
+                            baseUrl: 'https://mrsos.com.mx/php',
+                          ),
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: MRSColors.primary,
+                  backgroundImage: img,
+                  onBackgroundImageError: img == null ? null : (_, __) {},
+                  child:
+                      hasAvatar
+                          ? const SizedBox.shrink()
+                          : const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                          ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: MRSColors.teal,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'CENTRO DE OPERACIÓN',
+                style: TextStyle(
+                  color: MRSColors.muted,
+                  fontSize: 11,
+                  letterSpacing: 1.6,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            '$salutation, $displayName.',
+            style: const TextStyle(
+              fontSize: 34,
+              height: 1.03,
+              letterSpacing: -1,
+              fontWeight: FontWeight.w900,
+              color: MRSColors.text,
+            ),
+          ),
+          const SizedBox(height: 9),
+          const Text(
+            'Aquí tienes una lectura clara de tus servicios y de lo que necesita tu atención.',
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: MRSColors.muted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          MRSkeleton(
-            enabled: loading,
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: const Color(0xFFEAF0FF),
-              backgroundImage: img,
-              onBackgroundImageError: img == null ? null : (_, __) {},
-              child:
-                  hasAvatar
-                      ? const SizedBox.shrink()
-                      : const Icon(
-                        Icons.person_rounded,
-                        color: MRSColors.primary,
-                      ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: MRSkeleton(
-              enabled: loading,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: MRSColors.successText,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'Cliente',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'MR SOS',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: MRSColors.text,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (_) => UserProfileScreen(
-                                baseUrl: 'https://mrsos.com.mx/php',
-                              ),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      name.isEmpty ? 'Hola, Usuario' : 'Hola, $name',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: MRSColors.text,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Mis tickets y acciones pendientes',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: MRSColors.muted,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: MRSColors.soft,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: MRSColors.border),
-            ),
-            child: IconButton(
-              onPressed: onNotificationsTap,
-              icon: const Icon(
-                Icons.notifications_none_rounded,
-                color: MRSColors.primary,
-              ),
-            ),
-          ),
-        ],
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: MRSColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(13),
+        side: const BorderSide(color: MRSColors.border),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: MRSColors.primary, size: 21),
+        ),
       ),
     );
   }
@@ -914,50 +962,94 @@ class _KpiGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.75,
+      childAspectRatio: 1.38,
       children: [
-        _KpiCard(label: 'Total', value: total),
-        _KpiCard(label: 'Abiertos', value: abiertos),
-        _KpiCard(label: 'Requieren mi acción', value: accion),
-        _KpiCard(label: 'En curso', value: curso),
+        _KpiCard(
+          label: 'Tickets visibles',
+          value: total,
+          icon: Icons.layers_outlined,
+          color: MRSColors.primary,
+          background: MRSColors.blueSoft,
+        ),
+        _KpiCard(
+          label: 'Tickets abiertos',
+          value: abiertos,
+          icon: Icons.support_agent_rounded,
+          color: MRSColors.teal,
+          background: MRSColors.tealSoft,
+        ),
+        _KpiCard(
+          label: 'Requieren acción',
+          value: accion,
+          icon: Icons.warning_amber_rounded,
+          color: MRSColors.warningText,
+          background: MRSColors.warningBg,
+        ),
+        _KpiCard(
+          label: 'En coordinación',
+          value: curso,
+          icon: Icons.calendar_month_outlined,
+          color: MRSColors.accent,
+          background: MRSColors.blueSoft,
+        ),
       ],
     );
   }
 }
 
 class _KpiCard extends StatelessWidget {
-  const _KpiCard({required this.label, required this.value});
+  const _KpiCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.background,
+  });
 
   final String label;
   final int value;
+  final IconData icon;
+  final Color color;
+  final Color background;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: MRSColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: MRSColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: MRSColors.shadow,
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          MRIconBox(icon: icon, color: color, background: background, size: 42),
+          const SizedBox(height: 13),
           Text(
-            label,
-            maxLines: 2,
+            label.toUpperCase(),
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 10.5,
+              letterSpacing: .5,
               color: MRSColors.muted,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 2),
           Text(
             '$value',
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 27,
+              height: 1,
               fontWeight: FontWeight.w900,
               color: MRSColors.text,
             ),
@@ -1039,7 +1131,7 @@ class _MainCard extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w800),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: MRSColors.primary,
+                      backgroundColor: MRSColors.teal,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
