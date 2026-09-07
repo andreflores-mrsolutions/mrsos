@@ -20,7 +20,31 @@ class _MRSkeletonState extends State<MRSkeleton>
     _c = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
-    )..repeat(reverse: true);
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant MRSkeleton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncAnimation();
+  }
+
+  void _syncAnimation() {
+    final animate =
+        widget.enabled &&
+        !MediaQuery.disableAnimationsOf(context) &&
+        TickerMode.valuesOf(context).enabled;
+    if (animate && !_c.isAnimating) {
+      _c.repeat(reverse: true);
+    } else if (!animate) {
+      _c.stop();
+    }
   }
 
   @override
@@ -37,8 +61,8 @@ class _MRSkeletonState extends State<MRSkeleton>
       animation: _c,
       builder: (_, __) {
         final t = _c.value; // 0..1
-        final base = Colors.grey.withOpacity(0.18);
-        final hi = Colors.grey.withOpacity(0.32);
+        final base = Colors.grey.withValues(alpha: 0.18);
+        final hi = Colors.grey.withValues(alpha: 0.32);
 
         return ColorFiltered(
           colorFilter: const ColorFilter.matrix([
@@ -87,7 +111,7 @@ class SkeletonBox extends StatelessWidget {
       height: height,
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.22),
+        color: Colors.grey.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(radius),
       ),
     );

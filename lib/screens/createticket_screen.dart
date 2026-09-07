@@ -5,6 +5,7 @@ import 'package:mrsos/services/app_http.dart';
 import 'package:mrsos/services/session_store.dart';
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
+import 'package:mrsos/widget/mr_components.dart';
 
 import 'change_password_webview.dart'; // reutilízalo para WebView genérico (o crea uno simple)
 
@@ -17,8 +18,6 @@ class CreateTicketScreen extends StatefulWidget {
 }
 
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
-  static const mrPurple = Color.fromARGB(255, 15, 24, 76);
-
   bool _loading = true;
   bool _submitting = false;
 
@@ -314,91 +313,64 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   children: [
                     const MRPageIntro(
                       eyebrow: 'Nueva solicitud',
-                      title: '¿Cómo podemos ayudarte?',
+                      title: 'Vamos a resolverlo.',
                       subtitle:
-                          'Selecciona el activo relacionado y cuéntanos qué está pasando. Te guiaremos paso a paso.',
+                          'Cuéntanos qué sucede. Tu equipo de soporte se encargará del siguiente paso.',
                     ),
                     const SizedBox(height: 20),
-                    const MRSectionCard(
-                      padding: EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          MRIconBox(
-                            icon: Icons.support_agent_rounded,
-                            color: MRSColors.accent,
-                            background: MRSColors.blueSoft,
-                          ),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Ticket de soporte',
-                                  style: TextStyle(
-                                    color: MRSColors.text,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                SizedBox(height: 3),
-                                Text(
-                                  'Incidente, falla o solicitud técnica',
-                                  style: TextStyle(
-                                    color: MRSColors.muted,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: MRSColors.accent,
-                          ),
-                        ],
-                      ),
+                    const MRSectionHeading(
+                      title: 'Ubicación y equipo',
+                      subtitle: 'Selecciona dónde realizaremos el servicio',
                     ),
-                    const SizedBox(height: 18),
-                    const _TicketFlowSteps(),
-                    const SizedBox(height: 20),
-                    // Sede
                     _Card(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.apartment_rounded, color: mrPurple),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'Grupos/Sedes',
-                              style: TextStyle(fontWeight: FontWeight.w900),
-                            ),
+                          const Text(
+                            'Sede',
+                            style: TextStyle(fontWeight: FontWeight.w800),
                           ),
+                          const SizedBox(height: 8),
                           DropdownButton<int>(
                             value: _selectedCsId,
+                            isExpanded: true,
+                            itemHeight: null,
                             underline: const SizedBox.shrink(),
+                            hint: const Text('Selecciona una sede'),
+                            selectedItemBuilder:
+                                (context) =>
+                                    _sedes
+                                        .map(
+                                          (s) => Text(
+                                            '${s['csNombre'] ?? ''}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        )
+                                        .toList(),
                             items:
                                 _sedes
                                     .map(
                                       (s) => DropdownMenuItem<int>(
                                         value: s['csId'] as int,
-                                        child: Text(
-                                          (s['csNombre'] ?? '').toString(),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                          child: Text('${s['csNombre'] ?? ''}'),
                                         ),
                                       ),
                                     )
                                     .toList(),
-                            onChanged: (v) {
-                              setState(() {
-                                _selectedCsId = v;
-                                _syncEquipoDefault();
-                              });
-                            },
+                            onChanged:
+                                (value) => setState(() {
+                                  _selectedCsId = value;
+                                  _syncEquipoDefault();
+                                }),
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
 
                     // Equipo (filtrado por sede)
@@ -414,6 +386,19 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           DropdownButton<Map<String, dynamic>>(
                             value: _selectedEquipo,
                             isExpanded: true,
+                            itemHeight: null,
+                            selectedItemBuilder:
+                                (context) =>
+                                    equiposFiltrados
+                                        .map(
+                                          (e) => Text(
+                                            '${e['eqModelo'] ?? ''} ${e['eqVersion'] ?? ''}'
+                                                .trim(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        )
+                                        .toList(),
                             underline: const SizedBox.shrink(),
                             items:
                                 equiposFiltrados.map((e) {
@@ -426,6 +411,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                   return DropdownMenuItem(
                                     value: e,
                                     child: Column(
+                                      mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
@@ -450,6 +436,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             onChanged:
                                 (v) => setState(() => _selectedEquipo = v),
                           ),
+                          if (_selectedEquipo != null)
+                            Text(
+                              'SN ${_selectedEquipo!['peSN'] ?? 'Sin registrar'}',
+                              style: const TextStyle(
+                                color: MRSColors.muted,
+                                fontSize: 12,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -460,7 +454,15 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                     _Card(
                       child: Row(
                         children: [
-                          const Icon(Icons.brightness_1, color: Colors.red),
+                          Icon(
+                            Icons.flag_outlined,
+                            color:
+                                _criticidad == '1'
+                                    ? MRSColors.dangerText
+                                    : _criticidad == '2'
+                                    ? MRSColors.warningText
+                                    : MRSColors.successText,
+                          ),
                           const SizedBox(width: 10),
                           const Expanded(
                             child: Text(
@@ -555,37 +557,44 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Logs opcional + Ayuda
                     _Card(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Expanded(
-                            child: Text(
-                              'Logs (opcional)',
-                              style: TextStyle(fontWeight: FontWeight.w900),
-                            ),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Logs · opcional',
+                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: '¿Cómo extraer los logs?',
+                                onPressed: _openHelpLogs,
+                                icon: const Icon(
+                                  Icons.help_outline_rounded,
+                                  color: MRSColors.accent,
+                                ),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            tooltip: '¿Cómo extraer los logs?',
-                            onPressed: _openHelpLogs,
-                            icon: const Icon(
-                              Icons.help_outline_rounded,
-                              color: mrPurple,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          OutlinedButton(
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
                             onPressed: _pickLogs,
-                            child: Text(
-                              _logFile == null
-                                  ? 'Seleccionar Archivos'
-                                  : '1 archivo',
+                            icon: const Icon(
+                              Icons.attach_file_rounded,
+                              size: 20,
+                            ),
+                            label: Text(
+                              _logFile?.name ?? 'Adjuntar archivo',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16),
 
                     // Crear ticket
@@ -619,75 +628,7 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: MRSColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: MRSColors.shadow,
-            blurRadius: 20,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _TicketFlowSteps extends StatelessWidget {
-  const _TicketFlowSteps();
-
-  @override
-  Widget build(BuildContext context) {
-    const steps = [
-      (Icons.location_on_outlined, 'Ubicación'),
-      (Icons.dns_outlined, 'Equipo'),
-      (Icons.description_outlined, 'Detalles'),
-    ];
-    return Row(
-      children: [
-        for (var index = 0; index < steps.length; index++) ...[
-          Expanded(
-            child: Column(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: index == 0 ? MRSColors.accent : MRSColors.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: index == 0 ? MRSColors.accent : MRSColors.border,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    steps[index].$1,
-                    size: 17,
-                    color: index == 0 ? Colors.white : MRSColors.muted,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  steps[index].$2,
-                  style: TextStyle(
-                    color: index == 0 ? MRSColors.accent : MRSColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (index < steps.length - 1)
-            const Expanded(child: Divider(color: MRSColors.border)),
-        ],
-      ],
-    );
+    return MRSectionCard(padding: const EdgeInsets.all(16), child: child);
   }
 }
 

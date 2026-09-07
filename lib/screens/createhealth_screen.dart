@@ -5,6 +5,7 @@ import 'package:mrsos/services/session_store.dart';
 import 'package:mrsos/services/app_http.dart'; // tu singleton dio
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
+import 'package:mrsos/widget/mr_components.dart';
 
 class HealthCheckScreen extends StatefulWidget {
   const HealthCheckScreen({super.key, required this.baseUrl});
@@ -213,85 +214,64 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                 children: [
                   const MRPageIntro(
                     eyebrow: 'Revisión preventiva',
-                    title: 'Programa un Health Check',
+                    title: 'Anticípate a las fallas.',
                     subtitle:
                         'Selecciona la sede, los equipos y una ventana para revisar tu operación.',
                   ),
                   const SizedBox(height: 20),
-                  const MRSectionCard(
-                    padding: EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        MRIconBox(
-                          icon: Icons.health_and_safety_outlined,
-                          color: MRSColors.teal,
-                          background: MRSColors.tealSoft,
-                        ),
-                        SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Health Check',
-                                style: TextStyle(
-                                  color: MRSColors.text,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              SizedBox(height: 3),
-                              Text(
-                                'Programa una revisión preventiva',
-                                style: TextStyle(
-                                  color: MRSColors.muted,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.check_circle_rounded, color: MRSColors.teal),
-                      ],
-                    ),
+                  const MRSectionHeading(
+                    title: 'Ubicación y equipo',
+                    subtitle: 'Selecciona dónde realizaremos el servicio',
                   ),
-                  const SizedBox(height: 18),
                   _card(
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.apartment_rounded, color: mrPurple),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            'Grupos/Sedes',
-                            style: TextStyle(fontWeight: FontWeight.w900),
-                          ),
+                        const Text(
+                          'Sede',
+                          style: TextStyle(fontWeight: FontWeight.w800),
                         ),
+                        const SizedBox(height: 8),
                         DropdownButton<int>(
                           value: csId,
+                          isExpanded: true,
+                          itemHeight: null,
                           underline: const SizedBox.shrink(),
+                          hint: const Text('Selecciona una sede'),
+                          selectedItemBuilder:
+                              (context) =>
+                                  sedes
+                                      .map(
+                                        (s) => Text(
+                                          '${s['csNombre'] ?? ''}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      )
+                                      .toList(),
                           items:
                               sedes
                                   .map(
                                     (s) => DropdownMenuItem<int>(
                                       value: s['csId'] as int,
-                                      child: Text(
-                                        (s['csNombre'] ?? '').toString(),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        child: Text('${s['csNombre'] ?? ''}'),
                                       ),
                                     ),
                                   )
                                   .toList(),
-                          onChanged: (v) {
-                            setState(() {
-                              csId = v;
-                              selectedEqIds.clear();
-                            });
-                          },
+                          onChanged:
+                              (value) => setState(() {
+                                csId = value;
+                                selectedEqIds.clear();
+                              }),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 12),
 
                   _card(
@@ -420,7 +400,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                             border: InputBorder.none,
                           ),
                         ),
-                        const Divider(height: 1),
+                        const SizedBox(height: 16),
                         TextField(
                           controller: cTelefono,
                           onChanged: (_) => _warnEdit(),
@@ -430,7 +410,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                             border: InputBorder.none,
                           ),
                         ),
-                        const Divider(height: 1),
+                        const SizedBox(height: 16),
                         TextField(
                           controller: cCorreo,
                           onChanged: (_) => _warnEdit(),
@@ -469,21 +449,6 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
   }
 
   Widget _card(Widget child) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: MRSColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: MRSColors.shadow,
-            blurRadius: 20,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: child,
-    );
+    return MRSectionCard(padding: const EdgeInsets.all(16), child: child);
   }
 }

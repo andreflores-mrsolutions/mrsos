@@ -5,6 +5,7 @@ import 'package:mrsos/widget/mr_skeleton.dart';
 import 'package:mrsos/services/usuarios_service.dart';
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
+import 'package:mrsos/widget/mr_components.dart';
 
 class UsuariosTab extends StatefulWidget {
   const UsuariosTab({super.key});
@@ -14,8 +15,6 @@ class UsuariosTab extends StatefulWidget {
 }
 
 class _UsuariosTabState extends State<UsuariosTab> {
-  static const mrPurple = Color.fromARGB(255, 15, 24, 76);
-
   late final UsuariosService _api;
   bool _loading = true;
 
@@ -117,89 +116,58 @@ class _UsuariosTabState extends State<UsuariosTab> {
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+            physics: const AlwaysScrollableScrollPhysics(),
             children: [
               MRPageIntro(
                 eyebrow: 'Control de acceso',
-                title: 'Usuarios de clientes',
+                title: 'Nuestro equipo',
                 subtitle:
-                    'Administra a las personas que colaboran dentro de cada cuenta y sede.',
+                    'Las personas detrás de tu operación. Consulta sus datos y permisos por sede.',
                 trailing: _UsersCountBadge(count: _loading ? null : userCount),
               ),
               const SizedBox(height: 22),
 
-              // Search bar + menu (como mock)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: MRSColors.surface,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: MRSColors.border),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: MRSColors.shadow,
-                      blurRadius: 24,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    _FiltersMenuButton(
-                      onPickRol: (v) {
-                        setState(() => _rol = v);
-                        _load();
-                      },
-                      onPickZona: (id) {
-                        setState(() => _czId = id);
-                        _load();
-                      },
-                      onPickSede: (id) {
-                        setState(() => _csId = id);
-                        _load();
-                      },
-                      onPickNotif: (v) {
-                        setState(() => _notif = v);
-                        _load();
-                      },
-                      onClear: () {
-                        setState(() {
-                          _rol = '';
-                          _czId = 0;
-                          _csId = 0;
-                          _notif = '';
-                        });
-                        _load();
-                      },
-                      roles: _roles(),
-                      zonas: _zonas(),
-                      sedes: _sedes(),
-                      currentRol: _rol,
-                      currentCzId: _czId,
-                      currentCsId: _csId,
-                      currentNotif: _notif,
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    Expanded(
-                      child: TextField(
-                        controller: _search,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Buscar Usuario',
-                        ),
-                        onSubmitted: (v) {
-                          _q = v.trim();
-                          _load();
-                        },
-                      ),
-                    ),
-                    const Icon(Icons.search_rounded, color: mrPurple),
-                  ],
+              MRSearchField(
+                controller: _search,
+                hint: 'Buscar personas',
+                onSubmitted: (value) {
+                  _q = value.trim();
+                  _load();
+                },
+                trailing: _FiltersMenuButton(
+                  onPickRol: (v) {
+                    setState(() => _rol = v);
+                    _load();
+                  },
+                  onPickZona: (id) {
+                    setState(() => _czId = id);
+                    _load();
+                  },
+                  onPickSede: (id) {
+                    setState(() => _csId = id);
+                    _load();
+                  },
+                  onPickNotif: (v) {
+                    setState(() => _notif = v);
+                    _load();
+                  },
+                  onClear: () {
+                    setState(() {
+                      _rol = '';
+                      _czId = 0;
+                      _csId = 0;
+                      _notif = '';
+                    });
+                    _load();
+                  },
+                  roles: _roles(),
+                  zonas: _zonas(),
+                  sedes: _sedes(),
+                  currentRol: _rol,
+                  currentCzId: _czId,
+                  currentCsId: _csId,
+                  currentNotif: _notif,
                 ),
               ),
 
@@ -207,6 +175,13 @@ class _UsuariosTabState extends State<UsuariosTab> {
 
               if (_loading)
                 ...List.generate(3, (_) => const _GroupSkeleton())
+              else if (_groups.isEmpty)
+                const MREmptyState(
+                  title: 'No encontramos personas',
+                  message:
+                      'Prueba con otro nombre o ajusta los filtros de búsqueda.',
+                  icon: Icons.people_outline_rounded,
+                )
               else ...[
                 for (final g in _groups) ...[
                   _GroupHeader(title: (g['titulo'] ?? '').toString()),
@@ -506,103 +481,73 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nombre = (u['nombre'] ?? 'Usuario').toString();
-    final rol = (u['rol'] ?? '').toString();
-    String avatar = (u['username'] ?? '').toString();
-    if (u['avatar'] == '1') {
-      avatar = (u['username'] ?? '').toString();
-    } else {
-      avatar = 'avatar_default';
-    }
-    // si tu backend guarda en /img/Usuario/<archivo>
-    final avatarUrl =
-        avatar.isEmpty ? '' : 'https://mrsos.com.mx/img/Usuario/$avatar.jpg';
-    return GestureDetector(
-      onTap: () {
-        // Acción al tocar la tarjeta del usuario (si es necesario)
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdminUsuarioDetalleScreen(usId: u['usId']),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: MRSColors.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: MRSColors.border),
-          boxShadow: const [
-            BoxShadow(
-              color: MRSColors.shadow,
-              blurRadius: 22,
-              offset: Offset(0, 10),
-            ),
-          ],
+    final name = '${u['nombre'] ?? 'Usuario'}';
+    final role = '${u['rol'] ?? ''}';
+    final username = '${u['username'] ?? ''}';
+    final avatar =
+        u['avatar'] == '1' && username.isNotEmpty ? username : 'avatar_default';
+    final initials =
+        name
+            .trim()
+            .split(RegExp(r'\s+'))
+            .where((s) => s.isNotEmpty)
+            .take(2)
+            .map((s) => s.characters.first)
+            .join()
+            .toUpperCase();
+    return MRSectionCard(
+      padding: EdgeInsets.zero,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
         ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: const Color.fromARGB(255, 230, 232, 255),
-              backgroundImage:
-                  (avatarUrl.isNotEmpty)
-                      ? NetworkImage(avatarUrl)
-                      : const AssetImage('assets/images/avatar_default.png')
-                          as ImageProvider,
-              onBackgroundImageError: (_, __) {
-                // No puedes setear aquí directo, así que lo resolvemos con foregroundImage abajo
-              },
-              child:
-                  avatarUrl.isEmpty
-                      ? const Icon(
-                        Icons.person_rounded,
-                        color: Color(0xFF0B1B46),
-                      )
-                      : null,
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundColor: MRSColors.blueSoft,
+          foregroundImage: NetworkImage(
+            'https://mrsos.com.mx/img/Usuario/$avatar.jpg',
+          ),
+          onForegroundImageError: (_, _) {},
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: MRSColors.accent,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre,
+          ),
+        ),
+        title: Text(
+          name,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+        ),
+        subtitle:
+            role.isEmpty
+                ? null
+                : Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(
+                    role,
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    rol.isEmpty ? '' : rol,
-                    style: const TextStyle(
-                      color: Color(0xFF71809D),
-                      fontWeight: FontWeight.w700,
+                      color: MRSColors.muted,
                       fontSize: 12,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: MRSColors.blueSoft,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Icon(
-                Icons.arrow_forward_rounded,
-                size: 18,
-                color: MRSColors.accent,
-              ),
-            ),
-          ],
+                ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          size: 22,
+          color: MRSColors.muted,
         ),
+        onTap:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminUsuarioDetalleScreen(usId: u['usId']),
+              ),
+            ),
       ),
     );
   }

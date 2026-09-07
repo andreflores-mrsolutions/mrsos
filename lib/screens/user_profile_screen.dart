@@ -16,6 +16,7 @@ import '../services/profile_service.dart';
 import '../widget/mr_skeleton.dart';
 import '../widget/colors.dart';
 import '../widget/mr_theme.dart';
+import '../widget/mr_components.dart';
 import 'change_password_webview.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -423,7 +424,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       appBar: AppBar(
         backgroundColor: MRSColors.bg,
         title: const Text(
-          'Configuración',
+          'Cuenta y ajustes',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         centerTitle: false,
@@ -434,82 +435,95 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
             children: [
-              const SizedBox(height: 12),
               const MRPageIntro(
-                eyebrow: 'Cuenta y preferencias',
-                title: 'Configuración',
+                eyebrow: 'Tu espacio personal',
+                title: 'Mi cuenta',
                 subtitle:
-                    'Mantén tus datos actualizados y decide cómo quieres recibir novedades del servicio.',
+                    'Tus datos, tu acceso y tus preferencias de servicio.',
               ),
               const SizedBox(height: 24),
-
-              // Avatar + nombre grande
               MRSectionCard(
-                child: Column(
+                child: Row(
                   children: [
-                    Stack(
-                      children: [
-                        GestureDetector(
-                          onTap: _loading ? null : _pickAvatar,
-                          child: CircleAvatar(
-                            radius: 58,
-                            backgroundColor: MRSColors.blueSoft,
-                            backgroundImage: _avatarProvider(),
-                            child:
-                                (_avatarProvider() == null)
-                                    ? const Icon(
-                                      Icons.person_rounded,
-                                      size: 58,
-                                      color: mrPurple,
-                                    )
-                                    : null,
-                          ),
-                        ),
-                        Positioned(
-                          right: 2,
-                          bottom: 2,
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: MRSColors.accent,
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(color: Colors.white, width: 3),
+                    Semantics(
+                      button: true,
+                      label: 'Cambiar fotografía de perfil',
+                      child: InkWell(
+                        onTap: _loading ? null : _pickAvatar,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 34,
+                              backgroundColor: MRSColors.blueSoft,
+                              foregroundImage: _avatarProvider(),
+                              onForegroundImageError:
+                                  _avatarProvider() == null ? null : (_, _) {},
+                              child: const Icon(
+                                Icons.person_outline_rounded,
+                                size: 32,
+                                color: MRSColors.accent,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.edit,
-                              size: 14,
-                              color: Colors.white,
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: const BoxDecoration(
+                                  color: MRSColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 20),
-
-                    GestureDetector(
-                      onTap: _loading ? null : _openEditNameSheet,
+                    const SizedBox(width: 16),
+                    Expanded(
                       child: MRSkeleton(
                         enabled: _loading,
-                        child: Text(
-                          fullName,
-                          style: const TextStyle(
-                            fontSize: 21,
-                            color: MRSColors.text,
-                            fontWeight: FontWeight.w900,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fullName,
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'MR Support One Service',
+                              style: TextStyle(
+                                color: MRSColors.muted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 38),
+              const SizedBox(height: 24),
+              const MRSectionHeading(
+                title: 'Información personal',
+                subtitle: 'Mantén tus datos de contacto actualizados',
+              ),
 
               _ProfileTile(
                 icon: Icons.person_rounded,
-                label: 'Nombre del Contacto',
+                label: 'Nombre completo',
                 value: fullName,
                 onEdit: _loading ? () {} : _openEditNameSheet,
               ),
@@ -534,7 +548,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
               _ProfileTile(
                 icon: Icons.mail_rounded,
-                label: 'Correo Electrónico',
+                label: 'Correo electrónico',
                 value: usCorreo,
                 onEdit:
                     _loading
@@ -571,8 +585,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 230, 232, 255),
-                    foregroundColor: Colors.black,
+                    backgroundColor: MRSColors.blueSoft,
+                    foregroundColor: MRSColors.accent,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -595,19 +609,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   color: MRSColors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: MRSColors.border),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: MRSColors.shadow,
-                      blurRadius: 22,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Preferencias',
+                      'Seguridad y avisos',
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 8),
@@ -622,7 +629,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       onChanged: _onToggleCorreos,
                     ),
                     _SwitchRow(
-                      label: 'Acceso con Biométricos',
+                      label: 'Acceso biométrico',
                       value: prefBiometricos,
                       onChanged: (v) async {
                         final sp = await SharedPreferences.getInstance();
@@ -721,75 +728,57 @@ class _ProfileTile extends StatelessWidget {
     required this.onEdit,
   });
 
-  static const mrPurple = Color.fromARGB(255, 15, 24, 76);
-
   final IconData icon;
   final String label;
   final String value;
   final VoidCallback onEdit;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 230, 232, 255),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: mrPurple, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 8.5,
-                    color: Color(0xFF71809D),
-                    fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(18),
+      side: const BorderSide(color: MRSColors.border),
+    ),
+    child: InkWell(
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            MRIconBox(icon: icon, size: 38),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: MRSColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: onEdit,
-            child: const Text(
-              'Editar',
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF8F8AA3),
+                  const SizedBox(height: 5),
+                  Text(
+                    value.isEmpty ? 'Sin registrar' : value,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            const Icon(Icons.edit_outlined, color: MRSColors.accent, size: 19),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _SwitchRow extends StatelessWidget {

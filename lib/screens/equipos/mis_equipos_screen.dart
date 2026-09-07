@@ -5,6 +5,7 @@ import 'package:mrsos/services/equipos_service.dart';
 import 'package:mrsos/widget/mr_skeleton.dart';
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
+import 'package:mrsos/widget/mr_components.dart';
 import 'equipo_detalle_screen.dart';
 
 class MisEquiposTab extends StatefulWidget {
@@ -143,7 +144,8 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+            physics: const AlwaysScrollableScrollPhysics(),
             children: [
               const MRPageIntro(
                 eyebrow: 'Activos bajo cobertura',
@@ -160,8 +162,8 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
               const SizedBox(height: 18),
 
               _PillsToggle(
-                leftText: 'Activa',
-                rightText: 'Vencida',
+                leftText: 'Vigentes',
+                rightText: 'Vencidas',
                 value: _tab,
                 rightEnabled: hasVencidas, // 👈 nuevo
                 onChanged: (v) => setState(() => _tab = v),
@@ -171,10 +173,18 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
 
               if (loading)
                 ...List.generate(2, (_) => const _PolizaSectionSkeleton())
+              else if (_filteredPolizas().isEmpty)
+                const MREmptyState(
+                  title: 'No hay equipos para mostrar',
+                  message:
+                      'Los equipos asociados a tus pólizas aparecerán aquí.',
+                  icon: Icons.dns_outlined,
+                )
               else
                 ..._filteredPolizas().map(
                   (p) => _PolizaSection(
                     p: p,
+                    active: _isActivePoliza(p),
                     onVerTodo: () {
                       final pcId = int.tryParse('${p['pcId']}') ?? 0;
                       Navigator.of(context).push(
@@ -321,7 +331,7 @@ class _PillsToggle extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 232, 234, 255),
+          color: MRSColors.blueSoft,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
@@ -400,11 +410,13 @@ class _Pill extends StatelessWidget {
 class _PolizaSection extends StatelessWidget {
   const _PolizaSection({
     required this.p,
+    required this.active,
     required this.onVerTodo,
     required this.onTapEquipo,
   });
 
   final Map<String, dynamic> p;
+  final bool active;
   final VoidCallback onVerTodo;
   final void Function(int peId) onTapEquipo;
 
@@ -440,280 +452,170 @@ class _PolizaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prefix = p['clienteNombre'] ?? '';
     final equipos =
-        _equipos().map((e) => Map<String, dynamic>.from(e)).toList();
-
-    final tipoPol = '${p['pcTipoPoliza'] ?? ''}'.trim();
-
-    final policyIdent = (p['pcIdentificador'] ?? '').toString().trim();
-    final chipPoliza =
-        policyIdent.isNotEmpty ? 'Póliza $policyIdent' : _policyLabel();
-
-    final fi = _formatFecha('${p['pcFechaInicio'] ?? ''}');
-    final ff = _formatFecha('${p['pcFechaFin'] ?? ''}');
-    final venceTxt = ff.isNotEmpty ? ff : '';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Encabezado: “Póliza B 6162” + Ver todo
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                _policyLabel(),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0B1739),
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: onVerTodo,
-              child: const Text(
-                'Ver todo',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: Color.fromARGB(255, 50, 77, 230),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // ✅ LISTA HORIZONTAL (una card grande por equipo)
-        SizedBox(
-          height: 420,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: equipos.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
-            itemBuilder: (_, i) {
-              final e = equipos[i];
-              final peId = int.tryParse('${e['peId']}') ?? 0;
-
-              final modelo = '${e['eqModelo'] ?? ''}'.trim();
-              final sn = '${e['peSN'] ?? ''}'.trim();
-              final marca = '${e['maNombre'] ?? ''}'.trim();
-              final sede = '${e['csNombre'] ?? ''}'.trim();
-
-              final tickets = _ticketsDeEquipo(peId);
-              final ticketsTxt = tickets
-                  .map((t) => '$prefix - ${t['tiId']}')
-                  .join(', ');
-
-              // URLs (mismo patrón de tu servidor)
-              const base = 'https://mrsos.com.mx';
-              final marcaEnc = Uri.encodeComponent(marca);
-              final modeloEnc = Uri.encodeComponent(modelo);
-
-              final eqImg = '$base/img/Equipos/$marcaEnc/$modeloEnc.png';
-              final logoImg = '$base/img/Marcas/$marcaEnc.png';
-
-              return InkWell(
-                onTap: peId == 0 ? null : () => onTapEquipo(peId),
-                borderRadius: BorderRadius.circular(28),
-                child: Container(
-                  width: 322,
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                  decoration: BoxDecoration(
-                    color: MRSColors.surface,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: MRSColors.border),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: MRSColors.shadow,
-                        blurRadius: 28,
-                        offset: Offset(0, 14),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Imagen equipo
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 6.8,
-                          child: Container(
-                            color: MRSColors.blueSoft.withValues(alpha: .55),
-                            padding: const EdgeInsets.all(12),
-                            child: Image.network(
-                              eqImg,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) {
-                                return const Center(
-                                  child: Icon(
-                                    Icons.dns_rounded,
-                                    size: 42,
-                                    color: MRSColors.accent,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        modelo.isEmpty ? 'Equipo' : modelo,
-                        textAlign: TextAlign.left,
-                        style: const TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0B1739),
-                        ),
-                      ),
-
-                      const SizedBox(height: 2),
-
-                      Text(
-                        [
-                          if (fi.isNotEmpty) fi,
-                          if (ff.isNotEmpty) ff,
-                          if (sede.isNotEmpty) sede,
-                        ].join(' - '),
-                        textAlign: TextAlign.left,
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          color: Color(0xFF71809D),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      _ChipBlue(text: chipPoliza),
-                      const SizedBox(height: 6),
-                      _ChipGreen(
-                        text:
-                            venceTxt.isNotEmpty
-                                ? 'Póliza vigente (vence $venceTxt)'
-                                : 'Póliza vigente',
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      if (sn.isNotEmpty)
-                        Text(
-                          'SN: $sn',
-                          style: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF0B1739),
-                          ),
-                        ),
-
-                      const SizedBox(height: 4),
-
-                      // Logo marca grande
-                      SizedBox(
-                        height: 54,
-                        child: Image.network(
-                          logoImg,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) {
-                            return Text(
-                              marca.isEmpty ? '' : marca.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0B1739),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      if (tipoPol.isNotEmpty)
-                        Text(
-                          'Tipo de Póliza: $tipoPol',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0B1739),
-                          ),
-                        ),
-
-                      if (tickets.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tickets abiertos: $ticketsTxt',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            color: Color(0xFF0B1739),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
+        _equipos()
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+    final endDate = _formatFecha('${p['pcFechaFin'] ?? ''}');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MRSectionHeading(
+            title: _policyLabel(),
+            subtitle:
+                endDate.isEmpty
+                    ? 'Equipos asociados'
+                    : '${active ? 'Cobertura hasta' : 'Venció el'} $endDate',
+            action: 'Ver póliza',
+            onAction: onVerTodo,
           ),
-        ),
-
-        const SizedBox(height: 18),
-      ],
-    );
-  }
-}
-
-class _ChipBlue extends StatelessWidget {
-  const _ChipBlue({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD8EEFF),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF1C7ED6),
-          fontSize: 12.5,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _ChipGreen extends StatelessWidget {
-  const _ChipGreen({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFDFF7E8),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF1F8A4C),
-          fontSize: 12.5,
-          fontWeight: FontWeight.w700,
-        ),
+          ...equipos.map((e) {
+            final id = int.tryParse('${e['peId']}') ?? 0;
+            final model = '${e['eqModelo'] ?? ''}'.trim();
+            final brand = '${e['maNombre'] ?? ''}'.trim();
+            final serial = '${e['peSN'] ?? ''}'.trim();
+            final site = '${e['csNombre'] ?? ''}'.trim();
+            final tickets = _ticketsDeEquipo(id);
+            final imageUrl =
+                'https://mrsos.com.mx/img/Equipos/${Uri.encodeComponent(brand)}/${Uri.encodeComponent(model)}.png';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Material(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: const BorderSide(color: MRSColors.border),
+                ),
+                child: InkWell(
+                  onTap: id == 0 ? null : () => onTapEquipo(id),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 68,
+                              height: 68,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: MRSColors.soft,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder:
+                                    (_, _, _) => const Icon(
+                                      Icons.dns_outlined,
+                                      size: 32,
+                                      color: MRSColors.accent,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (brand.isNotEmpty)
+                                    Text(
+                                      brand.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        letterSpacing: 1.3,
+                                        fontWeight: FontWeight.w800,
+                                        color: MRSColors.muted,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    model.isEmpty ? 'Equipo' : model,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -.4,
+                                    ),
+                                  ),
+                                  if (serial.isNotEmpty) ...[
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'SN $serial',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: MRSColors.muted,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: MRSColors.muted,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 15),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            MRStatusPill(
+                              label:
+                                  active
+                                      ? 'Con cobertura'
+                                      : 'Cobertura vencida',
+                              color:
+                                  active
+                                      ? MRSColors.successText
+                                      : MRSColors.warningText,
+                              icon: Icons.verified_user_outlined,
+                            ),
+                            if (tickets.isNotEmpty)
+                              MRStatusPill(label: '${tickets.length} tickets'),
+                          ],
+                        ),
+                        if (site.isNotEmpty) ...[
+                          const SizedBox(height: 13),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 15,
+                                color: MRSColors.muted,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  site,
+                                  style: const TextStyle(
+                                    color: MRSColors.muted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -748,13 +650,6 @@ class _PolizaSectionSkeleton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 18,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
                 ),
                 child: const Column(
                   children: [

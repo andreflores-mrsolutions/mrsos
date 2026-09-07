@@ -5,6 +5,7 @@ import '../services/reportes_service.dart';
 import 'package:mrsos/widget/mr_skeleton.dart';
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
+import 'package:mrsos/widget/mr_components.dart';
 
 class ReportesTab extends StatefulWidget {
   const ReportesTab({super.key});
@@ -14,7 +15,6 @@ class ReportesTab extends StatefulWidget {
 }
 
 class _ReportesTabState extends State<ReportesTab> {
-  static const mrPurple = Color.fromARGB(255, 15, 24, 76);
   // ignore: unused_field
   static const pillActive = Color(0xFF0B1B46);
 
@@ -105,60 +105,32 @@ class _ReportesTabState extends State<ReportesTab> {
           child: RefreshIndicator(
             onRefresh: _load,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+              physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 MRPageIntro(
                   eyebrow: 'Documentación de servicio',
-                  title: 'Hojas de servicio',
+                  title: 'Mis documentos',
                   subtitle:
-                      'Descarga la documentación generada por las atenciones realizadas a tus equipos.',
+                      'Hojas de servicio y pólizas. Todo tu respaldo, siempre a la mano.',
                   trailing: _Badge(count: _loading ? null : _count),
                 ),
                 const SizedBox(height: 22),
 
-                // Search bar (con icono menu como mock)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MRSColors.surface,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: MRSColors.border),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: MRSColors.shadow,
-                        blurRadius: 24,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _search,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: 'Buscar Hoja de Servicio',
-                          ),
-                          onSubmitted: (v) {
-                            _q = v.trim();
-                            _load();
-                          },
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          _search.clear();
-                          _q = '';
-                          _load();
-                        },
-                        icon: const Icon(Icons.search_rounded, color: mrPurple),
-                      ),
-                    ],
+                MRSearchField(
+                  controller: _search,
+                  hint: 'Buscar en mis documentos',
+                  onSubmitted: (value) {
+                    _q = value.trim();
+                    _load();
+                  },
+                  trailing: IconButton(
+                    tooltip: 'Buscar documentos',
+                    onPressed: () {
+                      _q = _search.text.trim();
+                      _load();
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 20),
                   ),
                 ),
 
@@ -166,12 +138,12 @@ class _ReportesTabState extends State<ReportesTab> {
 
                 // Chips: HS-T / HS-HC / Polizas
                 SizedBox(
-                  height: 40,
+                  height: 52,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
                       _TabChip(
-                        text: 'HS - T',
+                        text: 'Tickets',
                         active: _tab == 'HS_T',
                         onTap: () {
                           setState(() => _tab = 'HS_T');
@@ -180,7 +152,7 @@ class _ReportesTabState extends State<ReportesTab> {
                       ),
                       const SizedBox(width: 10),
                       _TabChip(
-                        text: 'HS - HC',
+                        text: 'Health Checks',
                         active: _tab == 'HS_HC',
                         onTap: () {
                           setState(() => _tab = 'HS_HC');
@@ -249,7 +221,7 @@ class _ReportesTabState extends State<ReportesTab> {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
-            'Enel · $sedeNombre',
+            sedeNombre,
             style: const TextStyle(
               fontWeight: FontWeight.w900,
               color: Color(0xFF0B1739),
@@ -370,7 +342,7 @@ class _TabChip extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               active
-                  ? const Color.fromARGB(255, 50, 77, 230)
+                  ? MRSColors.accent
                   : const Color.fromARGB(255, 230, 232, 255),
           borderRadius: BorderRadius.circular(14),
         ),
@@ -392,80 +364,38 @@ class _DownloadCard extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
   });
-
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
+  Widget build(BuildContext context) => MRSectionCard(
+    padding: EdgeInsets.zero,
+    child: ListTile(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: MRSColors.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: MRSColors.border),
-          boxShadow: const [
-            BoxShadow(
-              color: MRSColors.shadow,
-              blurRadius: 22,
-              offset: Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const MRIconBox(
-              icon: Icons.description_outlined,
-              color: MRSColors.teal,
-              background: MRSColors.tealSoft,
-              size: 48,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF71809D),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: MRSColors.blueSoft,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Icon(
-                Icons.download_rounded,
-                size: 20,
-                color: MRSColors.accent,
-              ),
-            ),
-          ],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      leading: const MRIconBox(
+        icon: Icons.description_outlined,
+        color: MRSColors.tealDark,
+        background: MRSColors.tealSoft,
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 5),
+        child: Text(
+          subtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, color: MRSColors.muted),
         ),
       ),
-    );
-  }
+      trailing: const Icon(
+        Icons.file_download_outlined,
+        color: MRSColors.accent,
+      ),
+    ),
+  );
 }

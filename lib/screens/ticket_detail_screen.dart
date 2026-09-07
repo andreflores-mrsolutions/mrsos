@@ -12,6 +12,7 @@ import '../services/app_http.dart'; // o tu cliente Dio actual
 import '../widget/colors.dart';
 import '../widget/mr_skeleton.dart';
 import '../widget/mr_theme.dart';
+import '../widget/mr_components.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({
@@ -448,7 +449,6 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         eqVersion.trim().isEmpty ? eqModelo : '$eqModelo $eqVersion';
     final imageUrl = _equipImgUrl(marca: marca, modeloSinVersion: eqModelo);
     final brandUrl = _brandUrl(marca);
-    final progress = _progressFromProceso(proc);
     final action = _accionRequerida(d);
     final criticColor =
         critic == '1'
@@ -501,164 +501,91 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               const SizedBox(height: 22),
               MRSkeleton(
                 enabled: _loading,
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
+                child: MRSectionCard(
                   padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF091638), Color(0xFF23448E)],
-                    ),
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x2911245C),
-                        blurRadius: 30,
-                        offset: Offset(0, 16),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Positioned(
-                        right: -45,
-                        top: -70,
-                        child: Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: .05),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: .08),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: .10),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                                child: Text(
-                                  widget.folio,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: criticColor.withValues(alpha: .20),
-                                  borderRadius: BorderRadius.circular(99),
-                                  border: Border.all(
-                                    color: criticColor.withValues(alpha: .45),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Criticidad $critic',
-                                  style: TextStyle(
-                                    color:
-                                        criticColor == MRSColors.warningText
-                                            ? const Color(0xFFFFD071)
-                                            : criticColor ==
-                                                MRSColors.dangerText
-                                            ? const Color(0xFFFFA5AD)
-                                            : const Color(0xFF77E0B2),
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          MRStatusPill(
+                            label: ticketType,
+                            icon: Icons.confirmation_number_outlined,
                           ),
-                          const SizedBox(height: 26),
-                          Text(
-                            equipmentName.isEmpty
-                                ? 'Equipo relacionado'
-                                : equipmentName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 27,
-                              height: 1.08,
-                              letterSpacing: -1,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            [
-                              if (marca.isNotEmpty) marca,
-                              if (site.isNotEmpty) site,
-                              if (sn.isNotEmpty) 'SN $sn',
-                            ].join('  ·  '),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: .66),
-                              fontSize: 12,
-                              height: 1.35,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 26),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  proc.trim().isEmpty ? 'En revisión' : proc,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '${(progress * 100).round()}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 9),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(99),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              minHeight: 7,
-                              backgroundColor: Colors.white.withValues(
-                                alpha: .12,
-                              ),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                MRSColors.teal,
-                              ),
-                            ),
+                          MRStatusPill(
+                            label: 'Criticidad $critic',
+                            color: criticColor,
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        equipmentName.isEmpty
+                            ? 'Detalle del servicio'
+                            : equipmentName,
+                        style: const TextStyle(
+                          fontSize: 27,
+                          height: 1.15,
+                          letterSpacing: -.9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      Text(
+                        [
+                          if (site.isNotEmpty) site,
+                          if (sn.isNotEmpty) 'SN $sn',
+                        ].join(' · '),
+                        style: const TextStyle(
+                          color: MRSColors.muted,
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: MRSColors.tealSoft,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.route_outlined,
+                              color: MRSColors.tealDark,
+                              size: 23,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'ETAPA ACTUAL',
+                                    style: TextStyle(
+                                      color: MRSColors.tealDark,
+                                      fontSize: 9,
+                                      letterSpacing: 1,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    proc.trim().isEmpty ? 'En revisión' : proc,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

@@ -50,7 +50,7 @@ class MRTheme {
         bodyLarge: text.bodyLarge?.copyWith(height: 1.35),
         bodyMedium: text.bodyMedium?.copyWith(
           height: 1.35,
-          color: MRSColors.muted,
+          color: MRSColors.text,
         ),
       ),
       appBarTheme: const AppBarTheme(
@@ -150,6 +150,15 @@ class MRTheme {
         elevation: 8,
       ),
       navigationBarTheme: NavigationBarThemeData(
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            size: 23,
+            color:
+                states.contains(WidgetState.selected)
+                    ? MRSColors.accent
+                    : MRSColors.muted,
+          ),
+        ),
         backgroundColor: MRSColors.surface,
         indicatorColor: MRSColors.blueSoft,
         elevation: 0,
@@ -222,105 +231,62 @@ class MRPageIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0A1638), Color(0xFF183577)],
-        ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2411245C),
-            blurRadius: 30,
-            offset: Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Stack(
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -42,
-            top: -54,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: .045),
-                border: Border.all(color: Colors.white.withValues(alpha: .075)),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 38,
-            bottom: -72,
-            child: Container(
-              width: 124,
-              height: 124,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: MRSColors.teal.withValues(alpha: .11),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: MRSColors.teal,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        eyebrow.toUpperCase(),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: .70),
-                          fontSize: 10,
-                          letterSpacing: 1.75,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    if (trailing != null) trailing!,
-                  ],
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: MRSColors.teal,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: 30,
-                    height: 1.04,
-                    letterSpacing: -1.2,
-                    color: Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  eyebrow.toUpperCase(),
+                  style: const TextStyle(
+                    color: MRSColors.muted,
+                    fontSize: 10,
+                    letterSpacing: 1.6,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 10),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: .68),
-                      fontSize: 14,
-                      height: 1.45,
-                      fontWeight: FontWeight.w500,
-                    ),
+              ),
+              if (trailing != null)
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: MRSColors.primary,
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: trailing!,
                 ),
-              ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              fontSize: 32,
+              height: 1.12,
+              letterSpacing: -1.3,
+            ),
+          ),
+          const SizedBox(height: 9),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Text(
+              subtitle,
+              style: const TextStyle(
+                color: MRSColors.muted,
+                fontSize: 14,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -342,25 +308,18 @@ class MRSectionCard extends StatelessWidget {
   final EdgeInsets? margin;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: margin,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: MRSColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: MRSColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: MRSColors.shadow,
-            blurRadius: 26,
-            offset: Offset(0, 12),
-          ),
-        ],
+  Widget build(BuildContext context) => Padding(
+    padding: margin ?? EdgeInsets.zero,
+    child: Material(
+      color: MRSColors.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: MRSColors.border),
       ),
-      child: child,
-    );
-  }
+      child: Padding(padding: padding, child: child),
+    ),
+  );
 }
 
 class MRIconBox extends StatelessWidget {

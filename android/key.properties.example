@@ -1,0 +1,4 @@
+storePassword=CAMBIAR
+keyPassword=CAMBIAR
+keyAlias=mrsos
+storeFile=../keys/mrsos-upload.jks

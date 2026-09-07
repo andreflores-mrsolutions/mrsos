@@ -8,6 +8,7 @@ import '../services/app_http.dart'; // si tu IndexService usa AppHttp; si no, aj
 import '../widget/mr_skeleton.dart';
 import '../widget/colors.dart';
 import '../widget/mr_theme.dart';
+import 'createticket_screen.dart';
 import 'visita_actions_sheet.dart';
 import '../services/meet_service.dart';
 import 'meet_generar_screen.dart';
@@ -20,11 +21,13 @@ class TicketsSedesScreen extends StatefulWidget {
     required this.usId,
     required this.userName,
     this.initialCsId,
+    this.embedded = false,
   });
 
   final String usId;
   final String userName;
   final int? initialCsId;
+  final bool embedded;
 
   @override
   State<TicketsSedesScreen> createState() => _TicketsSedesScreenState();
@@ -592,43 +595,58 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 44),
             children: [
-              Row(
-                children: [
-                  _RoundIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    onTap: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Centro de soporte',
-                          style: TextStyle(
-                            color: MRSColors.text,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          'Todos tus casos en un lugar',
-                          style: TextStyle(
-                            color: MRSColors.muted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+              if (!widget.embedded)
+                Row(
+                  children: [
+                    _RoundIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () => Navigator.pop(context),
                     ),
-                  ),
-                  _RoundIconButton(icon: Icons.refresh_rounded, onTap: _load),
-                ],
-              ),
-              const SizedBox(height: 22),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Centro de soporte',
+                            style: TextStyle(
+                              color: MRSColors.text,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            'Todos tus casos en un lugar',
+                            style: TextStyle(
+                              color: MRSColors.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _RoundIconButton(icon: Icons.refresh_rounded, onTap: _load),
+                  ],
+                ),
+              if (!widget.embedded) const SizedBox(height: 22),
               MRPageIntro(
                 eyebrow: 'Mesa de ayuda',
-                title: 'Tickets de soporte',
+                title: 'Tus tickets',
+                trailing: IconButton(
+                  tooltip: 'Crear ticket',
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => CreateTicketScreen(
+                                baseUrl: 'https://mrsos.com.mx/php',
+                              ),
+                        ),
+                      ),
+                ),
                 subtitle:
                     actionCount > 0
                         ? 'Tienes $actionCount ${actionCount == 1 ? 'caso que necesita' : 'casos que necesitan'} tu atención.'
@@ -958,13 +976,6 @@ class _TicketListCard extends StatelessWidget {
             color: MRSColors.surface,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: MRSColors.border),
-            boxShadow: const [
-              BoxShadow(
-                color: MRSColors.shadow,
-                blurRadius: 24,
-                offset: Offset(0, 12),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1235,7 +1246,7 @@ class _FilterChipPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? mrPurple : const Color.fromARGB(255, 233, 238, 255),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFD9D0FF), width: 1.3),
+          border: Border.all(color: MRSColors.border, width: 1.3),
         ),
         child: Text(
           text,
@@ -1261,13 +1272,6 @@ class _TicketCardSkeleton extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE8E8F2), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1282,12 +1286,12 @@ class _TicketCardSkeleton extends StatelessWidget {
           SizedBox(height: 10),
           SkeletonBox(height: 16, width: 200),
           SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               SkeletonBox(height: 22, width: 80, radius: 99),
-              SizedBox(width: 8),
               SkeletonBox(height: 22, width: 90, radius: 99),
-              SizedBox(width: 8),
               SkeletonBox(height: 22, width: 70, radius: 99),
             ],
           ),
