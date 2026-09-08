@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/app_http.dart';
+import '../../services/ticket_catalog_service.dart';
 
 class SubirLogsScreen extends StatefulWidget {
   const SubirLogsScreen({
@@ -80,14 +81,14 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
         final path = f.path!;
         final form = FormData.fromMap({
           'tiId': widget.tiId.toString(),
-          'logs': await MultipartFile.fromFile(
+          'files[]': await MultipartFile.fromFile(
             path,
             filename: f.name,
           ), // 👈 logs (no logs[])
         });
 
         final r = await dio.post(
-          '/subir_logs.php',
+          TicketCatalogService(dio).endpoint('logs_upload'),
           data: form,
           options: Options(
             contentType: 'multipart/form-data',

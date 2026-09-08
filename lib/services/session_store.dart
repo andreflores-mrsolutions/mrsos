@@ -42,12 +42,43 @@ class SessionStore {
     await sp.setString(_kUsCorreo, usCorreo);
     await sp.setString(_kUsTelefono, usTelefono);
     await sp.setString(_kUsUsername, usUsername);
-    if (usImagen != null) await sp.setString(_kUsImagen, usImagen);
+    await sp.setString(_kUsImagen, usImagen ?? '');
 
     await sp.setString(_kUcrRol, ucrRol);
-    if (czId != null) await sp.setInt(_kCzId, czId);
-    if (csId != null) await sp.setInt(_kCsId, csId);
-    if (ucrClId != null) await sp.setInt(_kUcrClId, ucrClId);
+    if (czId != null) {
+      await sp.setInt(_kCzId, czId);
+    } else {
+      await sp.remove(_kCzId);
+    }
+    if (csId != null) {
+      await sp.setInt(_kCsId, csId);
+    } else {
+      await sp.remove(_kCsId);
+    }
+    if (ucrClId != null) {
+      await sp.setInt(_kUcrClId, ucrClId);
+    } else {
+      await sp.remove(_kUcrClId);
+    }
+  }
+
+  static Future<void> saveServerSession(Map<String, dynamic> user) async {
+    await saveLogin(
+      usId: '${user['usId'] ?? ''}',
+      userName: '${user['usNombre'] ?? ''}',
+      usAPaterno: '${user['usAPaterno'] ?? ''}',
+      usAMaterno: '${user['usAMaterno'] ?? ''}',
+      usCorreo: '${user['usCorreo'] ?? ''}',
+      usTelefono: '${user['usTelefono'] ?? ''}',
+      usUsername: '${user['usUsername'] ?? ''}',
+      usImagen: user['usImagen']?.toString(),
+      ucrRol: '${user['ucrRol'] ?? ''}',
+      czId: int.tryParse('${user['czId']}'),
+      csId: int.tryParse('${user['csId']}'),
+      ucrClId: int.tryParse('${user['clId'] ?? user['ucrClId']}'),
+    );
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString('mrs_usRol', '${user['rol'] ?? user['usRol'] ?? ''}');
   }
 
   Future<Map<String, dynamic>> getProfile() async {
@@ -63,6 +94,7 @@ class SessionStore {
       'usUsername': sp.getString(_kUsUsername),
       'usImagen': sp.getString(_kUsImagen),
       'ucrRol': sp.getString(_kUcrRol),
+      'usRol': sp.getString('mrs_usRol'),
       'czId': sp.getInt(_kCzId),
       'csId': sp.getInt(_kCsId),
       'ucrClId': sp.getInt(_kUcrClId),
@@ -71,7 +103,13 @@ class SessionStore {
 
   static Future<void> clear() async {
     final sp = await SharedPreferences.getInstance();
-    await sp.clear();
+    for (final key
+        in sp
+            .getKeys()
+            .where((key) => key.startsWith('mrs_') || key.startsWith('pref_'))
+            .toList()) {
+      await sp.remove(key);
+    }
   }
 
   Future<void> debugDump({String tag = 'SessionStore'}) async {

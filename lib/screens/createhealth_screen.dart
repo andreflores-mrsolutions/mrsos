@@ -1,4 +1,4 @@
-import 'dart:convert';
+import '../services/ticket_catalog_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/session_store.dart';
@@ -56,33 +56,54 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
     cTelefono.text = (p['usTelefono'] ?? '').toString();
     cCorreo.text = (p['usCorreo'] ?? '').toString();
 
-    // equipos/sedes
-    final res = await dio.get('${widget.baseUrl}/obtener_equipo_poliza.php');
-    final data = res.data;
-
-    if (data is Map && data['success'] == true) {
-      final list = (data['equipos'] as List? ?? []).cast<dynamic>();
-      equipos = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-
-      final map = <int, String>{};
-      for (final e in equipos) {
-        final id = int.tryParse('${e['csId']}');
-        final name = (e['csNombre'] ?? '').toString();
-        if (id != null && name.isNotEmpty) map[id] = name;
+    try {
+      sedes = await TicketCatalogService(dio).sites(healthOnly: true);
+      if (!mounted) return;
+      if (sedes.isNotEmpty) {
+        csId = sedes.first['csId'] as int;
+        await _loadSiteEquipment();
       }
-
-      sedes =
-          map.entries.map((x) => {'csId': x.key, 'csNombre': x.value}).toList()
-            ..sort(
-              (a, b) =>
-                  (a['csNombre'] as String).compareTo(b['csNombre'] as String),
-            );
-
-      if (sedes.isNotEmpty) csId = sedes.first['csId'] as int;
+    } catch (error) {
+      _showError(error);
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
+  }
 
-    if (!mounted) return;
-    setState(() => loading = false);
+  Future<void> _loadSiteEquipment() async {
+    final id = csId;
+    selectedEqIds.clear();
+    equipos = [];
+    if (id == null) return;
+    setState(() => loading = true);
+    try {
+      final items = await TicketCatalogService(
+        dio,
+      ).equipment(id, healthOnly: true);
+      if (mounted && id == csId) setState(() => equipos = items);
+    } catch (error) {
+      _showError(error);
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  void _showError(Object error) {
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppHttp.friendlyError(error)),
+          action: SnackBarAction(label: 'Reintentar', onPressed: _init),
+        ),
+      );
+  }
+
+  @override
+  void dispose() {
+    cNombre.dispose();
+    cTelefono.dispose();
+    cCorreo.dispose();
+    super.dispose();
   }
 
   void _warnEdit() {
@@ -147,7 +168,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
           equiposFiltrados
               .where(
                 (e) =>
-                    selectedEqIds.contains(int.tryParse('${e['eqId']}') ?? -1),
+                    selectedEqIds.contains(int.tryParse('${e['peId']}') ?? -1),
               )
               .map(
                 (e) => {
@@ -157,18 +178,18 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
               )
               .toList();
 
-      final form = FormData.fromMap({
+      final form = {
         'csId': csId,
         'hcFechaHora': _fmtDateTime(fechaHora),
         'hcDuracionMins': duracionMins,
         'hcNombreContacto': cNombre.text.trim(),
         'hcNumeroContacto': cTelefono.text.trim(),
         'hcCorreoContacto': cCorreo.text.trim(),
-        'equipos': jsonEncode(items),
-      });
+        'items': items,
+      };
 
       final res = await dio.post(
-        '${widget.baseUrl}/crear_health_check.php',
+        TicketCatalogService(dio).endpoint('health_create'),
         data: form,
       );
       final j = res.data;
@@ -177,7 +198,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Health Check creado. Tickets: ${(j['tickets'] as List).length}',
+              'Health Check #${j['hcId']} programado correctamente.',
             ),
           ),
         );
@@ -189,6 +210,8 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
       }
+    } catch (error) {
+      _showError(error);
     } finally {
       if (mounted) setState(() => sending = false);
     }
@@ -263,11 +286,10 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                                     ),
                                   )
                                   .toList(),
-                          onChanged:
-                              (value) => setState(() {
-                                csId = value;
-                                selectedEqIds.clear();
-                              }),
+                          onChanged: (value) {
+                            setState(() => csId = value);
+                            _loadSiteEquipment();
+                          },
                         ),
                       ],
                     ),
@@ -284,7 +306,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                         ),
                         const SizedBox(height: 8),
                         ...equiposFiltrados.map((e) {
-                          final eqId = int.tryParse('${e['eqId']}') ?? -1;
+                          final eqId = int.tryParse('${e['peId']}') ?? -1;
                           final checked = selectedEqIds.contains(eqId);
 
                           final modelo =

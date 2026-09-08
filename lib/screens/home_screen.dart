@@ -9,7 +9,9 @@ import 'package:mrsos/screens/ticket_detail_screen.dart';
 import 'package:mrsos/screens/tickets_sedes_screen.dart';
 import 'package:mrsos/screens/user_profile_screen.dart';
 import 'package:mrsos/screens/usuarios_list_screen.dart';
-import 'package:mrsos/services/local_notify.dart';
+import '../services/push_service.dart';
+import '../screens/notifications_screen.dart';
+import '../config/app_config.dart';
 import 'package:mrsos/services/session_store.dart';
 import '../services/app_http.dart';
 import '../services/index_service.dart';
@@ -32,6 +34,20 @@ class HomeDashboardScreen extends StatefulWidget {
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   int _tabIndex = 0;
   final Map<int, Widget> _visitedTabs = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) PushService.I.signedIn();
+    });
+  }
+
+  @override
+  void dispose() {
+    PushService.I.lock();
+    super.dispose();
+  }
 
   Widget _page(int index) => _visitedTabs.putIfAbsent(
     index,
@@ -146,15 +162,10 @@ class _HomeTabState extends State<HomeTab> {
   Future<void> _loadProfile() async {
     try {
       final u = await SessionStore().getProfile();
-      String avatar = (u['usUsername'] ?? '').toString();
-      final flag = (u['usImagen'] ?? '').toString();
-
-      if (flag != '1') {
-        avatar = 'avatar_default';
-      }
-      if (avatar.isEmpty) avatar = 'avatar_default';
-
-      final avatarUrl = 'https://mrsos.com.mx/img/Usuario/$avatar.jpg';
+      final avatarUrl = AppConfig.avatarUrl(
+        u['usImagen'],
+        username: '${u['usUsername'] ?? ''}',
+      );
       if (!mounted) return;
       setState(() => _avatarUrl = avatarUrl);
     } catch (_) {}
@@ -166,15 +177,27 @@ class _HomeTabState extends State<HomeTab> {
       _error = null;
     });
     try {
-      final a = await api.getIndexData();
-      final b = await api.estadisticasMes();
-      final c = await api.obtenerTicketsSedes();
-
+      final current = await api.tickets();
+      final meta = AppHttp.jsonMap(current['meta'] ?? {});
+      Map<String, dynamic> supplemental = {};
+      String? warning;
+      try {
+        supplemental = await api.getIndexData();
+      } catch (_) {
+        warning =
+            'Tickets actualizados. No se pudo consultar la agenda de Health Check.';
+      }
       if (!mounted) return;
       setState(() {
-        indexData = a;
-        stats = b;
-        ticketsSedes = c;
+        indexData = {
+          ...supplemental,
+          'tickets': current['tickets'],
+          'ticketsAbiertos': meta['abiertos'],
+          'actionCount': meta['accion'],
+        };
+        stats = meta;
+        ticketsSedes = IndexService.groupBySite(current);
+        _error = warning;
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -186,7 +209,7 @@ class _HomeTabState extends State<HomeTab> {
       await _loadAll();
     } catch (e) {
       if (mounted) {
-        setState(() => _error = 'Revisa tu conexión e intenta de nuevo.');
+        setState(() => _error = AppHttp.friendlyError(e));
       }
       final msg = e.toString().toLowerCase();
       if (msg.contains('no autenticado')) {
@@ -201,17 +224,9 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Future<void> _onNotificationPressed() async {
-    final granted = await LocalNotify.requestPermission();
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          granted
-              ? 'Notificaciones locales activadas correctamente.'
-              : 'No se otorgaron permisos de notificaciones.',
-        ),
-      ),
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
     );
   }
 
@@ -246,7 +261,7 @@ class _HomeTabState extends State<HomeTab> {
       openTickets: _safeInt(
         indexData['ticketsAbiertos'] ?? _safeList(indexData, 'tickets').length,
       ),
-      actionCount: _countActionRequired(items),
+      actionCount: _safeInt(indexData['actionCount']),
       tickets: items,
       healthChecks:
           _safeList(
@@ -310,7 +325,7 @@ class _HomeTabState extends State<HomeTab> {
                   (_) => HealthCheckDetailScreen(
                     baseUrl: 'https://mrsos.com.mx/php',
                     hcId: _safeInt(item['hcId']),
-                    hcFolio: 'HC - INE - ${item['hcId']}',
+                    hcFolio: 'HC - ${item['hcId']}',
                   ),
             ),
           ),

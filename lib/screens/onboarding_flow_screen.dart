@@ -286,23 +286,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         return;
       }
 
-      final u = r.user ?? widget.user;
-
-      // Guarda sesión:
-      await SessionStore.saveLogin(
-        usId: '${u['usId'] ?? usId}',
-        userName: '${u['usNombre'] ?? usNombre}',
-        usAPaterno: '${u['usAPaterno'] ?? usAPaterno}',
-        usAMaterno: '${u['usAMaterno'] ?? usAMaterno}',
-        usCorreo: '${u['usCorreo'] ?? usCorreo}',
-        usTelefono: '${u['usTelefono'] ?? usTelefono}',
-        usUsername: '${u['usUsername'] ?? usUsername}',
-        usImagen: u['usImagen']?.toString(),
-        ucrRol: '${u['ucrRol'] ?? ''}',
-        czId: u['czId'] != null ? int.tryParse('${u['czId']}') : null,
-        csId: u['csId'] != null ? int.tryParse('${u['csId']}') : null,
-        ucrClId: u['ucrClId'] != null ? int.tryParse('${u['ucrClId']}') : null,
-      );
+      await AppHttp.I.refreshSession();
+      if (!mounted) return;
 
       // Ir a Home
       Navigator.of(context).pushAndRemoveUntil(

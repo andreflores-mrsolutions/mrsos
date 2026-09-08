@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mrsos/screens/ticket_detail_screen.dart';
-import 'package:mrsos/services/local_notify.dart';
+import 'services/document_service.dart';
+import 'config/app_config.dart';
+import 'services/push_service.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/login_screen.dart';
 
 import 'services/app_http.dart';
 import 'screens/splash_gate.dart';
@@ -11,9 +15,26 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await LocalNotify.init();
-
-  await AppHttp.init(baseUrl: 'https://mrsos.com.mx/php');
+  await AppHttp.init(baseUrl: AppConfig.apiBaseUrl);
+  var expiring = false;
+  AppHttp.I.onSessionExpired = () async {
+    if (expiring) return;
+    expiring = true;
+    await PushService.I.sessionExpired();
+    await AppHttp.I.clearSession();
+    await DocumentService.clearCache();
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const WelcomeLoginScreen()),
+      (_) => false,
+    );
+    expiring = false;
+  };
+  PushService.I.onOpenInbox = () {
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+  };
+  await PushService.I.initialize();
 
   runApp(const MrSosApp());
 }
@@ -38,7 +59,7 @@ class MrSosApp extends StatelessWidget {
                   ? Map<String, dynamic>.from(settings.arguments as Map)
                   : <String, dynamic>{};
 
-          final tiId = (args['tiId'] is int) ? args['tiId'] as int : 0;
+          final tiId = int.tryParse('${args['tiId']}') ?? 0;
           final folio = (args['folio'] ?? '').toString();
 
           return MaterialPageRoute(

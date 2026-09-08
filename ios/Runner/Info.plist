@@ -48,5 +48,15 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Necesitamos Face ID para desbloquear MRSOS.</string>
 
+    <key>UIBackgroundModes</key>
+    <array><string>remote-notification</string></array>
+    <key>FirebaseMessagingAutoInitEnabled</key>
+    <false/>
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>Adjunta fotografías a tus solicitudes de soporte y a tu perfil.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Selecciona fotografías para tu perfil y solicitudes de soporte.</string>
 </dict>
 </plist>

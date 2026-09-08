@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'app_http.dart';
+import 'ticket_catalog_service.dart';
 
 class VisitaService {
   VisitaService._();
@@ -76,19 +77,19 @@ class VisitaService {
   }) async {
     final map = <String, dynamic>{
       'tiId': tiId,
-      'folio': folio,
-      'coment': coment,
+      'tiFolioEntrada': folio,
+      'comentario': coment,
     };
 
     if (archivo != null) {
-      map['archivo'] = await MultipartFile.fromFile(
+      map['folioFile'] = await MultipartFile.fromFile(
         archivo.path,
         filename: archivo.path.split('/').last,
       );
     }
 
     final r = await _dio.post(
-      '/visita_folio_guardar.php',
+      TicketCatalogService(_dio).endpoint('visita_folio_upload'),
       data: FormData.fromMap(map),
     );
     _ensureOk(r.data);

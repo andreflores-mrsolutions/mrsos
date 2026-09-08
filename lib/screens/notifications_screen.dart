@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../services/app_http.dart';
 import '../services/notification_service.dart';
 import '../services/session_store.dart';
+import '../services/push_service.dart';
 import '../theme/mrs_theme.dart';
 import 'ticket_detail_screen.dart';
 import 'tickets_sedes_screen.dart';
@@ -21,6 +22,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<InboxNotification> _items = const [];
   bool _loading = true;
   String _error = '';
+  Map<String, dynamic> _delivery = {};
 
   @override
   void initState() {
@@ -38,8 +40,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     try {
       final items = await _service.list();
+      Map<String, dynamic> delivery = {};
+      try {
+        delivery = AppHttp.jsonMap(
+          (await AppHttp.I.dio.get('/notification_status.php')).data,
+        );
+      } catch (_) {}
       if (!mounted) return;
-      setState(() => _items = items);
+      setState(() {
+        _items = items;
+        _delivery = delivery;
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = _friendlyError(error));
@@ -133,7 +144,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final unread = _items.where((item) => !item.read).length;
+    final unread = NotificationInbox.unreadCount.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -155,6 +166,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ValueListenableBuilder<String>(
+                        valueListenable: PushService.I.status,
+                        builder: (_, text, __) => Text(text),
+                      ),
+                      if (_delivery['mobileConfigured'] == false)
+                        const Text(
+                          'El servidor todavía no tiene habilitado el envío Firebase.',
+                          style: TextStyle(color: Colors.deepOrange),
+                        ),
+                      if (_delivery['mobileDatabaseReady'] == false)
+                        const Text(
+                          'El servidor no puede consultar la tabla de dispositivos.',
+                        ),
+                      if (_error.isNotEmpty && _items.isNotEmpty) Text(_error),
+                      TextButton.icon(
+                        onPressed: () async {
+                          await PushService.I.sync(requestPermission: true);
+                          if (mounted) await _load();
+                        },
+                        icon: const Icon(Icons.sync),
+                        label: const Text('Verificar notificaciones'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                 sliver: SliverToBoxAdapter(
@@ -264,7 +307,7 @@ class _InboxSummary extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '$total avisos recientes de tickets, meets y visitas',
+                  '$total avisos recientes · historial compartido con la web',
                   style: const TextStyle(
                     color: Color(0xFFCEC7E8),
                     fontSize: 12.5,

@@ -32,7 +32,7 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
     super.initState();
     _auth = AuthService(
       dio: widget.dio ?? AppHttp.I.dio,
-      loginPath: '/login_app.php',
+      loginPath: '/login.php',
     ); // ✅ tu php real
   }
 
@@ -83,51 +83,22 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
 
       if (r.success && r.user != null) {
         final u = r.user!;
-        await SessionStore.saveLogin(
-          usId: '${u['usId'] ?? ''}',
-          userName: '${u['usNombre'] ?? ''}',
-          usAPaterno: '${u['usAPaterno'] ?? ''}',
-          usAMaterno: '${u['usAMaterno'] ?? ''}',
-          usCorreo: '${u['usCorreo'] ?? ''}',
-          usTelefono: '${u['usTelefono'] ?? ''}',
-          usUsername: '${u['usUsername'] ?? ''}',
-          usImagen: u['usImagen']?.toString(),
-          ucrRol: '${u['ucrRol'] ?? ''}',
-          czId: u['czId'] != null ? int.tryParse('${u['czId']}') : null,
-          csId: u['csId'] != null ? int.tryParse('${u['csId']}') : null,
-          ucrClId:
-              u['ucrClId'] != null ? int.tryParse('${u['ucrClId']}') : null,
-        );
-
-        print('=== LOGIN: PERFIL RECIBIDO ===');
-        print('usId=${u['usId']}');
-        print('usNombre=${u['usNombre']}');
-        print('usAPaterno=${u['usAPaterno']}');
-        print('usAMaterno=${u['usAMaterno']}');
-        print('usCorreo=${u['usCorreo']}');
-        print('usTelefono=${u['usTelefono']}');
-        print('usUsername=${u['usUsername']}');
-        print('usImagen=${u['usImagen']}');
-        print('ucrRol=${u['ucrRol']}');
-        print('czId=${u['czId']}');
-        print('csId=${u['csId']}');
-        print('ucrClId=${u['ucrClId']}');
-        print('==============================');
-        await SessionStore().debugDump(tag: 'AfterSaveLogin');
+        await SessionStore.saveServerSession(u);
+        if (!mounted) return;
 
         // navegar
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder:
                 (_) => HomeDashboardScreen(
-                  usId: _userCtrl.text.trim(),
+                  usId: '${u['usId']}',
                   userName: u['usNombre']?.toString() ?? 'Usuario',
                 ),
           ),
         );
       }
     } catch (e) {
-      _snack('Error: $e', isError: true);
+      if (mounted) _snack(AppHttp.friendlyError(e), isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

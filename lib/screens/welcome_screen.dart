@@ -8,6 +8,8 @@ import 'package:mrsos/widget/MRPrimaryButton.dart';
 import 'package:mrsos/widget/colors.dart';
 
 import '../services/session_store.dart';
+import '../services/app_http.dart';
+import 'onboarding_flow_screen.dart';
 import 'home_screen.dart';
 
 class WelcomeMRSOSScreen extends StatefulWidget {
@@ -81,17 +83,36 @@ class _WelcomeMRSOSScreenState extends State<WelcomeMRSOSScreen> {
       }
 
       // 5) OK -> Home
-      final usId = (await SessionStore.usId()) ?? '';
-      final userName = (await SessionStore.userName()) ?? 'Usuario';
+      final user = await AppHttp.I.refreshSession();
+      final usId = '${user['usId']}';
+      final userName = '${user['usNombre'] ?? 'Usuario'}';
 
       if (!mounted) return;
 
       // ✅ Navega al Home (sin .then)
+      if (user['forceChangePass'] == true ||
+          '${user['usConfirmado']}'.toLowerCase() == 'no') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder:
+                (_) => OnboardingFlowScreen(
+                  user: user,
+                  forceChangePass: user['forceChangePass'] == true,
+                ),
+          ),
+        );
+        return;
+      }
       navigatorKey.currentState?.pushReplacement(
         MaterialPageRoute(
           builder: (_) => HomeDashboardScreen(usId: usId, userName: userName),
         ),
       );
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppHttp.friendlyError(error))));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

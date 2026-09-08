@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'app_http.dart';
 
 class LoginResult {
   final bool success;
@@ -37,14 +37,27 @@ class AuthService {
   }) async {
     final res = await _dio.post(
       loginPath,
-      data: FormData.fromMap({'usId': usId.trim(), 'usPass': usPass}),
+      data: FormData.fromMap({
+        'usId': usId.trim(),
+        'usPass': usPass,
+        'remember': '1',
+      }),
     );
 
-    if (res.data is Map) {
-      return LoginResult.fromJson(Map<String, dynamic>.from(res.data));
+    final result = AppHttp.jsonMap(res.data);
+    if (result['success'] != true) return LoginResult.fromJson(result);
+    final me = AppHttp.jsonMap((await _dio.get('/me.php')).data);
+    if (me['success'] != true || me['usId'] == null) {
+      throw StateError('No se pudo recuperar la sesión del servidor.');
     }
-
-    final decoded = json.decode(res.data.toString());
-    return LoginResult.fromJson(Map<String, dynamic>.from(decoded));
+    return LoginResult.fromJson({
+      ...result,
+      'user': me,
+      'forceChangePass':
+          result['forceChangePass'] == true || me['forceChangePass'] == true,
+      'onboardingRequired':
+          result['onboardingRequired'] == true ||
+          '${me['usConfirmado']}'.toLowerCase() == 'no',
+    });
   }
 }

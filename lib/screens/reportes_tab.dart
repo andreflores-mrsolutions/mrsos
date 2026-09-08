@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/app_http.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../services/document_service.dart';
 import '../services/reportes_service.dart';
 import 'package:mrsos/widget/mr_skeleton.dart';
 import 'package:mrsos/widget/colors.dart';
@@ -86,12 +86,8 @@ class _ReportesTabState extends State<ReportesTab> {
       _toast('Archivo no disponible.');
       return;
     }
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      _toast('URL inválida.');
-      return;
-    }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try { await DocumentService.openPdf(url); }
+    catch (error) { if (mounted) _toast(AppHttp.friendlyError(error)); }
   }
 
   @override

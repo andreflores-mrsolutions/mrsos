@@ -3,6 +3,7 @@ import 'colors.dart';
 import 'mr_components.dart';
 import 'mr_theme.dart';
 import 'mr_skeleton.dart';
+import '../services/notification_service.dart';
 
 /// Dashboard presentation. Counts and items are supplied by the existing API.
 class HomeOverview extends StatelessWidget {
@@ -312,7 +313,7 @@ class _OverviewHeader extends StatelessWidget {
         ),
         IconButton.outlined(
           onPressed: onNotifications,
-          tooltip: 'Permisos de notificaciones',
+          tooltip: 'Notificaciones',
           style: IconButton.styleFrom(
             side: const BorderSide(color: MRSColors.border),
             minimumSize: const Size(48, 48),
@@ -320,7 +321,15 @@ class _OverviewHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          icon: const Icon(Icons.notifications_none_rounded, size: 23),
+          icon: ValueListenableBuilder<int>(
+            valueListenable: NotificationInbox.unreadCount,
+            builder:
+                (_, count, __) => Badge(
+                  isLabelVisible: count > 0,
+                  label: Text(count > 99 ? '99+' : '$count'),
+                  child: const Icon(Icons.notifications_none_rounded, size: 23),
+                ),
+          ),
         ),
       ],
     );

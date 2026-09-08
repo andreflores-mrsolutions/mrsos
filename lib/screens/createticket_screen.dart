@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/app_http.dart';
+import '../services/ticket_catalog_service.dart';
 import 'package:mrsos/services/session_store.dart';
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
@@ -89,45 +90,49 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   }
 
   Future<void> _loadEquiposPoliza() async {
-    // GET /obtener_equipo_poliza.php
-    final res = await _dio.get(
-      '${widget.baseUrl}/obtener_equipo_poliza.php',
-      options: Options(responseType: ResponseType.json),
-    );
+    try {
+      final catalog = TicketCatalogService(_dio);
+      _sedes = await catalog.sites();
+      if (!mounted) return;
+      _selectedCsId = _sedes.isEmpty ? null : _sedes.first['csId'] as int;
+      if (_selectedCsId != null) await _loadSiteEquipment();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppHttp.friendlyError(error)),
+            action: SnackBarAction(label: 'Reintentar', onPressed: _init),
+          ),
+        );
+    }
+  }
 
-    final data = res.data;
-    if (data is Map && data['success'] == true) {
-      final list = (data['equipos'] as List? ?? []).cast<dynamic>();
-      _equipos = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-
-      // Armar sedes únicas (csId/csNombre)
-      final map = <int, String>{};
-      for (final e in _equipos) {
-        final csId = int.tryParse((e['csId'] ?? '').toString());
-        final csNombre = (e['csNombre'] ?? '').toString();
-        if (csId != null && csNombre.isNotEmpty) {
-          map[csId] = csNombre;
-        }
-      }
-
-      _sedes =
-          map.entries.map((x) => {'csId': x.key, 'csNombre': x.value}).toList()
-            ..sort(
-              (a, b) =>
-                  (a['csNombre'] as String).compareTo(b['csNombre'] as String),
-            );
-
-      // Default: primera sede
-      if (_sedes.isNotEmpty) {
-        _selectedCsId = _sedes.first['csId'] as int;
-      }
-
-      // Default equipo: primero de esa sede
-      _syncEquipoDefault();
-    } else {
-      throw Exception(
-        (data is Map ? data['error'] : null) ?? 'No se pudo cargar equipos',
-      );
+  Future<void> _loadSiteEquipment() async {
+    final id = _selectedCsId;
+    _selectedEquipo = null;
+    _equipos = [];
+    if (id == null) return;
+    setState(() => _loading = true);
+    try {
+      final list = await TicketCatalogService(_dio).equipment(id);
+      if (!mounted || id != _selectedCsId) return;
+      setState(() {
+        _equipos = list;
+        _syncEquipoDefault();
+      });
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppHttp.friendlyError(error)),
+            action: SnackBarAction(
+              label: 'Reintentar',
+              onPressed: _loadSiteEquipment,
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -203,16 +208,17 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         'csId': csId,
         'peId': peId,
         'eqId': eqId,
-        'descripcion': cDescripcion.text.trim(),
-        'severidad': _criticidad,
-        'contacto': cNombre.text.trim(),
-        'telefono': cTelefono.text.trim(),
-        'email': cCorreo.text.trim(),
+        'tiDescripcion': cDescripcion.text.trim(),
+        'tiNivelCriticidad': _criticidad,
+        'tiNombreContacto': cNombre.text.trim(),
+        'tiNumeroContacto': cTelefono.text.trim(),
+        'tiCorreoContacto': cCorreo.text.trim(),
+        'tiTipoTicket': 'Servicio',
         // si tu crear_ticket.php usa otros nombres, lo ajustamos a tu PHP real.
       });
 
       final res = await _dio.post(
-        '${widget.baseUrl}/crear_ticket.php',
+        TicketCatalogService(_dio).endpoint('ticket_create'),
         data: form,
         options: Options(responseType: ResponseType.json),
       );
@@ -227,42 +233,27 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
       final tiId = int.tryParse((json['tiId'] ?? '').toString());
 
-      // 2) Si hay logs, subirlos (como hace tu web: tiId + logs a subir_logs.php):contentReference[oaicite:3]{index=3}
-      if (tiId != null && _logFile != null && _logFile!.path != null) {
-        final fd = FormData.fromMap({
-          'tiId': tiId,
-          'logs': await MultipartFile.fromFile(
-            _logFile!.path!,
-            filename: _logFile!.name,
-          ),
-        });
-
-        final up = await _dio.post(
-          '${widget.baseUrl}/subir_logs.php',
-          data: fd,
-          options: Options(responseType: ResponseType.json),
-        );
-        final upJson = up.data;
-
-        if (upJson is Map && upJson['success'] != true) {
-          // Ticket ya existe; solo avisamos que logs fallaron.
-          final msg =
-              (upJson['error'] ?? 'Ticket creado, pero falló la carga de logs')
-                  .toString();
-          if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(msg)));
-          }
+      // Creation is already committed: upload failures must never offer to
+      // create the ticket again. Logs can be retried from the ticket detail.
+      String? uploadWarning;
+      if (tiId != null && _logFile?.path != null) {
+        try {
+          if (_logFile!.size > 25 * 1024 * 1024) throw StateError('El límite por log es 25 MB.');
+          final fd = FormData.fromMap({'tiId': tiId});
+          fd.files.add(MapEntry('files[]', await MultipartFile.fromFile(
+            _logFile!.path!, filename: _logFile!.name)));
+          await _dio.post(TicketCatalogService(_dio).endpoint('logs_upload'), data: fd);
+        } catch (error) {
+          uploadWarning = 'Ticket #$tiId creado. Adjunta los logs desde su detalle: ${AppHttp.friendlyError(error)}';
         }
       }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ticket creado correctamente')),
+        SnackBar(content: Text(uploadWarning ?? 'Ticket #$tiId creado correctamente')),
       );
-      Navigator.pop(context); // volver (por ahora)
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -362,11 +353,10 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                       ),
                                     )
                                     .toList(),
-                            onChanged:
-                                (value) => setState(() {
-                                  _selectedCsId = value;
-                                  _syncEquipoDefault();
-                                }),
+                            onChanged: (value) {
+                              setState(() => _selectedCsId = value);
+                              _loadSiteEquipment();
+                            },
                           ),
                         ],
                       ),

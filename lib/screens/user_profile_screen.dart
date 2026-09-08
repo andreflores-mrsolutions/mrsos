@@ -8,7 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:mrsos/screens/login_screen.dart';
 import 'package:mrsos/services/app_http.dart';
-import 'package:mrsos/services/local_notify.dart';
+import '../services/notification_service.dart';
+import '../services/push_service.dart';
+import '../config/app_config.dart';
+import '../services/document_service.dart';
 import 'package:mrsos/services/session_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +20,7 @@ import '../widget/mr_skeleton.dart';
 import '../widget/colors.dart';
 import '../widget/mr_theme.dart';
 import '../widget/mr_components.dart';
-import 'change_password_webview.dart';
+import 'change_password_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
@@ -55,6 +58,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Preferencias (por ahora UI; si quieres las guardamos en SharedPreferences)
   bool prefNotificaciones = true;
   bool prefCorreos = true;
+  NotificationPreferences? _preferences;
+  bool _savingPreferences = false;
 
   @override
   void initState() {
@@ -68,48 +73,86 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _loadPreferences() async {
-    final sp = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      prefNotificaciones = sp.getBool('pref_notificaciones') ?? true;
-      prefCorreos = sp.getBool('pref_correos') ?? true;
-    });
+    try {
+      final value =
+          await NotificationsService(dio: AppHttp.I.dio).loadPreferences();
+      if (!mounted) return;
+      setState(() {
+        _preferences = value;
+        prefNotificaciones = value.inApp;
+        prefCorreos = value.mail;
+      });
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppHttp.friendlyError(error)),
+            action: SnackBarAction(
+              label: 'Reintentar',
+              onPressed: _loadPreferences,
+            ),
+          ),
+        );
+    }
+  }
+
+  Future<void> _savePreferences(NotificationPreferences value) async {
+    if (_savingPreferences || _preferences == null) return;
+    setState(() => _savingPreferences = true);
+    try {
+      await NotificationsService(dio: AppHttp.I.dio).savePreferences(value);
+      if (!mounted) return;
+      setState(() {
+        _preferences = value;
+        prefNotificaciones = value.inApp;
+        prefCorreos = value.mail;
+      });
+      await PushService.I.sync(requestPermission: value.inApp);
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppHttp.friendlyError(error))));
+    } finally {
+      if (mounted) setState(() => _savingPreferences = false);
+    }
   }
 
   Future<void> _onToggleNotificaciones(bool enabled) async {
-    final sp = await SharedPreferences.getInstance();
-
-    if (!enabled) {
-      await sp.setBool('pref_notificaciones', false);
-      if (!mounted) return;
-      setState(() => prefNotificaciones = false);
-      return;
-    }
-
-    final granted = await LocalNotify.requestPermission();
-    if (!mounted) return;
-
-    if (!granted) {
-      setState(() => prefNotificaciones = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No se otorgaron permisos de notificaciones. Actívalos en ajustes del sistema.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    await sp.setBool('pref_notificaciones', true);
-    setState(() => prefNotificaciones = true);
+    if (_preferences != null)
+      await _savePreferences(_preferences!.copyWith(inApp: enabled));
   }
 
   Future<void> _onToggleCorreos(bool enabled) async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool('pref_correos', enabled);
-    if (!mounted) return;
-    setState(() => prefCorreos = enabled);
+    if (_preferences != null)
+      await _savePreferences(_preferences!.copyWith(mail: enabled));
+  }
+
+  Future<void> _signOut() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await PushService.I.signOut();
+      await AppHttp.I.dio.get('/logout.php', queryParameters: {'ajax': 1});
+      await AppHttp.I.clearSession();
+      await DocumentService.clearCache();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const WelcomeLoginScreen()),
+        (_) => false,
+      );
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'No se pudo cerrar la sesión de forma segura. ${AppHttp.friendlyError(error)}',
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _loadAndValidateBiometrics() async {
@@ -157,23 +200,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // ✅ server base (sin /php)
   String get _serverBase => widget.baseUrl.replaceAll('/php', '');
 
-  String? get avatarUrl {
-    print(usImagen);
-    // Si tu BD pone "0" cuando no hay imagen, lo tratamos como vacío
-    if (usImagen.isEmpty || usImagen == '0') {
-      return 'http://192.168.3.7/img/Usuario/avatar_default.jpg';
-    }
-
-    // Si ya guardas filename en usImagen, úsalo.
-    // Si no confías, puedes forzar por username.jpg como estabas haciendo.
-    // Preferencia: usar filename real si existe:
-    return 'http://192.168.3.7/img/Usuario/$usUsername.jpg';
-  }
-
-  String get brandFallbackAvatarByUsername {
-    // fallback si tu backend siempre guarda por username.jpg
-    return 'http://192.168.3.7/img/Usuario/$usUsername.jpg';
-  }
+  String? get avatarUrl => AppConfig.avatarUrl(usImagen, username: usUsername);
+  String get brandFallbackAvatarByUsername => AppConfig.avatarUrl('0');
 
   Future<void> _pickAvatar() async {
     final picker = ImagePicker();
@@ -224,6 +252,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         }
 
         // ✅ opcional: refrescar desde store si tu backend también actualiza sesión/valores
+        await AppHttp.I.refreshSession();
         await _loadProfile();
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,10 +431,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void _openPasswordWeb() {
-    final url = '$_serverBase/dashboard/cambiar_password.php';
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ChangePasswordWebViewScreen(url: url)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
   }
 
   ImageProvider<Object>? _avatarProvider() {
@@ -618,6 +646,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 8),
+                    if (_preferences == null)
+                      const Text('Consultando preferencias compartidas…'),
+                    if (_savingPreferences) const LinearProgressIndicator(),
                     _SwitchRow(
                       label: 'Notificaciones',
                       value: prefNotificaciones,
@@ -628,6 +659,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       value: prefCorreos,
                       onChanged: _onToggleCorreos,
                     ),
+                    if (_preferences != null) ...[
+                      _SwitchRow(
+                        label: 'Cambios de ticket',
+                        value: _preferences!.ticketChanges,
+                        onChanged:
+                            (v) => _savePreferences(
+                              _preferences!.copyWith(ticketChanges: v),
+                            ),
+                      ),
+                      _SwitchRow(
+                        label: 'Reuniones',
+                        value: _preferences!.meet,
+                        onChanged:
+                            (v) => _savePreferences(
+                              _preferences!.copyWith(meet: v),
+                            ),
+                      ),
+                      _SwitchRow(
+                        label: 'Visitas',
+                        value: _preferences!.visit,
+                        onChanged:
+                            (v) => _savePreferences(
+                              _preferences!.copyWith(visit: v),
+                            ),
+                      ),
+                      _SwitchRow(
+                        label: 'Folios de acceso',
+                        value: _preferences!.folio,
+                        onChanged:
+                            (v) => _savePreferences(
+                              _preferences!.copyWith(folio: v),
+                            ),
+                      ),
+                    ],
                     _SwitchRow(
                       label: 'Acceso biométrico',
                       value: prefBiometricos,
@@ -692,20 +757,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: () async {
-                    await SessionStore().debugDump(tag: 'BeforeLogout');
-                    await SessionStore.clear();
-                    await SessionStore().debugDump(tag: 'AfterLogout');
-
-                    if (!context.mounted) return;
-
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => const WelcomeLoginScreen(),
-                      ),
-                      (_) => false,
-                    );
-                  },
+                  onPressed: _loading ? null : _signOut,
                   child: const Text(
                     'Cerrar sesión',
                     style: TextStyle(fontWeight: FontWeight.w900),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'app_http.dart';
 
 class NotificationInbox {
   const NotificationInbox._();
@@ -65,9 +66,8 @@ class InboxNotification {
   int? get ticketId {
     final text = '$title $body $url';
     final patterns = <RegExp>[
-      RegExp(r'ticket\s*#?\s*(\d+)', caseSensitive: false),
+      RegExp(r'ticket(?:\s+nuevo)?\s*#?\s*(\d+)', caseSensitive: false),
       RegExp(r'[?&](?:tiId|ticketId)=(\d+)', caseSensitive: false),
-      RegExp(r'#(\d+)'),
     ];
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
@@ -168,7 +168,7 @@ class NotificationsService {
 
   final Dio _dio;
 
-  Future<List<InboxNotification>> list({int limit = 50}) async {
+  Future<List<InboxNotification>> list({int limit = 80}) async {
     final response = await _dio.get(
       '/notifications_list.php',
       queryParameters: {'limit': limit},
@@ -207,7 +207,7 @@ class NotificationsService {
     );
     final json = _map(response.data);
     _ensureSuccess(json);
-    NotificationInbox.setUnread(NotificationInbox.unreadCount.value - 1);
+    await refreshUnread();
   }
 
   Future<void> markAllRead() async {
@@ -216,7 +216,7 @@ class NotificationsService {
       data: const {'all': true},
     );
     _ensureSuccess(_map(response.data));
-    NotificationInbox.setUnread(0);
+    await refreshUnread();
   }
 
   Future<NotificationPreferences> loadPreferences() async {
@@ -235,8 +235,7 @@ class NotificationsService {
   }
 
   static Map<String, dynamic> _map(dynamic value) {
-    if (value is Map) return Map<String, dynamic>.from(value);
-    return <String, dynamic>{};
+    return AppHttp.jsonMap(value);
   }
 
   static void _ensureSuccess(Map<String, dynamic> json) {
