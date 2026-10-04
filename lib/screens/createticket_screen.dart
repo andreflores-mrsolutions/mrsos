@@ -3,12 +3,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/app_http.dart';
 import '../services/ticket_catalog_service.dart';
-import 'package:mrsos/services/session_store.dart';
 import 'package:mrsos/widget/colors.dart';
 import 'package:mrsos/widget/mr_theme.dart';
 import 'package:mrsos/widget/mr_components.dart';
 
-import 'change_password_webview.dart'; // reutilízalo para WebView genérico (o crea uno simple)
+import 'log_guides_screen.dart';
+import '../widget/equipment_picker.dart';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key, required this.baseUrl});
@@ -21,6 +21,11 @@ class CreateTicketScreen extends StatefulWidget {
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
   bool _loading = true;
   bool _submitting = false;
+  int _catalogGeneration = 0;
+  String _role = '';
+  bool get _internal => ['MRSA', 'MRA'].contains(_role);
+  List<Map<String, dynamic>> _clients = [], _responsibles = [];
+  int? _clientId, _responsibleId;
 
   // Perfil (prefill)
   String usNombre = '';
@@ -70,7 +75,20 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     setState(() => _loading = true);
 
     // 1) Prefill desde SessionStore
-    final p = await SessionStore().getProfile();
+    Map<String, dynamic> p;
+    try {
+      p = AppHttp.jsonMap((await _dio.get('/me.php')).data);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppHttp.friendlyError(error))));
+      }
+      return;
+    }
+    if (!mounted) return;
+    _role = '${p['usRol'] ?? p['rol'] ?? ''}';
     usNombre = (p['usNombre'] ?? '').toString();
     usAPaterno = (p['usAPaterno'] ?? '').toString();
     usAMaterno = (p['usAMaterno'] ?? '').toString();
@@ -89,9 +107,24 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     setState(() => _loading = false);
   }
 
+  @override
+  void dispose() {
+    cNombre.dispose();
+    cTelefono.dispose();
+    cCorreo.dispose();
+    cDescripcion.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadEquiposPoliza() async {
     try {
       final catalog = TicketCatalogService(_dio);
+      if (_internal) {
+        final clients = await catalog.clients();
+        if (mounted) setState(() => _clients = clients);
+        return;
+      }
+      if (_role != 'CLI') throw StateError('Tu rol no permite crear tickets.');
       _sedes = await catalog.sites();
       if (!mounted) return;
       _selectedCsId = _sedes.isEmpty ? null : _sedes.first['csId'] as int;
@@ -108,17 +141,27 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   }
 
   Future<void> _loadSiteEquipment() async {
+    final generation = ++_catalogGeneration;
     final id = _selectedCsId;
     _selectedEquipo = null;
     _equipos = [];
+    _responsibles = [];
+    _responsibleId = null;
     if (id == null) return;
     setState(() => _loading = true);
     try {
-      final list = await TicketCatalogService(_dio).equipment(id);
-      if (!mounted || id != _selectedCsId) return;
+      final catalog = TicketCatalogService(_dio);
+      final clientId = _internal ? _clientId : null;
+      if (_internal && clientId == null) return;
+      final list = await catalog.equipment(id, clientId: clientId);
+      final users =
+          _internal
+              ? await catalog.responsibleUsers(clientId!, id)
+              : <Map<String, dynamic>>[];
+      if (!mounted || generation != _catalogGeneration) return;
       setState(() {
         _equipos = list;
-        _syncEquipoDefault();
+        _responsibles = users;
       });
     } catch (error) {
       if (mounted)
@@ -132,22 +175,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
           ),
         );
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && generation == _catalogGeneration)
+        setState(() => _loading = false);
     }
-  }
-
-  void _syncEquipoDefault() {
-    if (_selectedCsId == null) {
-      _selectedEquipo = null;
-      return;
-    }
-    final filtered =
-        _equipos.where((e) {
-          final csId = int.tryParse((e['csId'] ?? '').toString());
-          return csId == _selectedCsId;
-        }).toList();
-
-    _selectedEquipo = filtered.isNotEmpty ? filtered.first : null;
   }
 
   Future<void> _pickLogs() async {
@@ -160,27 +190,59 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     setState(() => _logFile = result.files.first);
   }
 
+  Future<void> _selectClient(int? value) async {
+    final generation = ++_catalogGeneration;
+    setState(() {
+      _clientId = value;
+      _selectedCsId = null;
+      _selectedEquipo = null;
+      _sedes = [];
+      _equipos = [];
+      _responsibles = [];
+      _responsibleId = null;
+      _loading = true;
+    });
+    try {
+      if (value == null) return;
+      final sites = await TicketCatalogService(_dio).sites(clientId: value);
+      if (mounted && generation == _catalogGeneration)
+        setState(() => _sedes = sites);
+    } catch (e) {
+      if (mounted && generation == _catalogGeneration)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppHttp.friendlyError(e))));
+    } finally {
+      if (mounted && generation == _catalogGeneration)
+        setState(() => _loading = false);
+    }
+  }
+
   void _openHelpLogs() {
     if (_selectedEquipo == null) return;
-
-    final marca = (_selectedEquipo?['maNombre'] ?? '').toString();
-    final modelo =
-        ((_selectedEquipo?['eqModelo'] ?? '')).toString() +
-        ((_selectedEquipo?['eqVersion'] ?? '').toString().trim().isEmpty
-            ? ''
-            : ' ${_selectedEquipo?['eqVersion']}'.toString());
-
-    final url =
-        Uri.parse('https://mrsos.com.mx/dashboard/ayuda_logs.php')
-            .replace(queryParameters: {'marca': marca, 'modelo': modelo})
-            .toString();
-
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ChangePasswordWebViewScreen(url: url)),
+      MaterialPageRoute(
+        builder:
+            (_) => LogGuidesScreen(
+              peId: int.tryParse('${_selectedEquipo?['peId']}'),
+            ),
+      ),
     );
   }
 
   Future<void> _submit() async {
+    if (_submitting || _loading) return;
+    if (!['CLI', 'MRSA', 'MRA'].contains(_role) ||
+        (_internal && (_clientId == null || _responsibleId == null))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Selecciona el cliente y su usuario responsable autorizado.',
+          ),
+        ),
+      );
+      return;
+    }
     if (_selectedEquipo == null) {
       ScaffoldMessenger.of(
         context,
@@ -203,8 +265,10 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
       final eqId = int.tryParse((eq['eqId'] ?? '').toString());
 
       // 1) Crear ticket (sin logs primero)
-      // Tu backend maneja sesión y crea tiId; devuelve JSON con success/tiId:contentReference[oaicite:2]{index=2}
-      final form = FormData.fromMap({
+      // The server derives the actor from the PHP session and validates scope.
+      final form = {
+        if (_internal) 'clId': _clientId,
+        if (_internal) 'usIdCliente': _responsibleId,
         'csId': csId,
         'peId': peId,
         'eqId': eqId,
@@ -214,11 +278,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         'tiNumeroContacto': cTelefono.text.trim(),
         'tiCorreoContacto': cCorreo.text.trim(),
         'tiTipoTicket': 'Servicio',
-        // si tu crear_ticket.php usa otros nombres, lo ajustamos a tu PHP real.
-      });
+      };
 
       final res = await _dio.post(
-        TicketCatalogService(_dio).endpoint('ticket_create'),
+        TicketCatalogService(
+          _dio,
+        ).endpoint('ticket_create', internal: _internal),
         data: form,
         options: Options(responseType: ResponseType.json),
       );
@@ -238,20 +303,34 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
       String? uploadWarning;
       if (tiId != null && _logFile?.path != null) {
         try {
-          if (_logFile!.size > 25 * 1024 * 1024) throw StateError('El límite por log es 25 MB.');
+          if (_logFile!.size > 25 * 1024 * 1024)
+            throw StateError('El límite por log es 25 MB.');
           final fd = FormData.fromMap({'tiId': tiId});
-          fd.files.add(MapEntry('files[]', await MultipartFile.fromFile(
-            _logFile!.path!, filename: _logFile!.name)));
-          await _dio.post(TicketCatalogService(_dio).endpoint('logs_upload'), data: fd);
+          fd.files.add(
+            MapEntry(
+              'files[]',
+              await MultipartFile.fromFile(
+                _logFile!.path!,
+                filename: _logFile!.name,
+              ),
+            ),
+          );
+          await _dio.post(
+            TicketCatalogService(_dio).endpoint('logs_upload'),
+            data: fd,
+          );
         } catch (error) {
-          uploadWarning = 'Ticket #$tiId creado. Adjunta los logs desde su detalle: ${AppHttp.friendlyError(error)}';
+          uploadWarning =
+              'Ticket #$tiId creado. Adjunta los logs desde su detalle: ${AppHttp.friendlyError(error)}';
         }
       }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(uploadWarning ?? 'Ticket #$tiId creado correctamente')),
+        SnackBar(
+          content: Text(uploadWarning ?? 'Ticket #$tiId creado correctamente'),
+        ),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -321,6 +400,26 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             'Sede',
                             style: TextStyle(fontWeight: FontWeight.w800),
                           ),
+                          if (_internal) ...[
+                            DropdownButton<int>(
+                              value: _clientId,
+                              isExpanded: true,
+                              hint: const Text('Selecciona el cliente'),
+                              items:
+                                  _clients
+                                      .map(
+                                        (c) => DropdownMenuItem(
+                                          value: int.parse('${c['clId']}'),
+                                          child: Text(
+                                            '${c['clNombre']}',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: _submitting ? null : _selectClient,
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           DropdownButton<int>(
                             value: _selectedCsId,
@@ -353,11 +452,52 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                       ),
                                     )
                                     .toList(),
-                            onChanged: (value) {
-                              setState(() => _selectedCsId = value);
-                              _loadSiteEquipment();
-                            },
+                            onChanged:
+                                _submitting
+                                    ? null
+                                    : (value) {
+                                      setState(() => _selectedCsId = value);
+                                      _loadSiteEquipment();
+                                    },
                           ),
+                          if (_internal)
+                            DropdownButton<int>(
+                              value: _responsibleId,
+                              isExpanded: true,
+                              hint: const Text(
+                                'Usuario responsable de esta sede',
+                              ),
+                              items:
+                                  _responsibles
+                                      .map(
+                                        (u) => DropdownMenuItem(
+                                          value: int.parse('${u['usId']}'),
+                                          child: Text(
+                                            '${u['nombre']}',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged:
+                                  _submitting
+                                      ? null
+                                      : (id) {
+                                        if (id == null) return;
+                                        final user = _responsibles.firstWhere(
+                                          (u) => '${u['usId']}' == '$id',
+                                        );
+                                        setState(() {
+                                          _responsibleId = id;
+                                          cNombre.text =
+                                              '${user['nombre'] ?? ''}';
+                                          cCorreo.text =
+                                              '${user['correo'] ?? ''}';
+                                          cTelefono.text =
+                                              '${user['telefono'] ?? ''}';
+                                        });
+                                      },
+                            ),
                         ],
                       ),
                     ),
@@ -373,58 +513,30 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             style: TextStyle(fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 8),
-                          DropdownButton<Map<String, dynamic>>(
-                            value: _selectedEquipo,
-                            isExpanded: true,
-                            itemHeight: null,
-                            selectedItemBuilder:
-                                (context) =>
-                                    equiposFiltrados
-                                        .map(
-                                          (e) => Text(
-                                            '${e['eqModelo'] ?? ''} ${e['eqVersion'] ?? ''}'
-                                                .trim(),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        )
-                                        .toList(),
-                            underline: const SizedBox.shrink(),
-                            items:
-                                equiposFiltrados.map((e) {
-                                  final modelo =
-                                      '${e['eqModelo'] ?? ''} ${e['eqVersion'] ?? ''}'
-                                          .trim();
-                                  final sn = (e['peSN'] ?? '').toString();
-                                  final marca =
-                                      (e['maNombre'] ?? '').toString();
-                                  return DropdownMenuItem(
-                                    value: e,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          modelo,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'SN: $sn • $marca',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                            onChanged:
-                                (v) => setState(() => _selectedEquipo = v),
+                          OutlinedButton.icon(
+                            onPressed:
+                                _loading || _submitting
+                                    ? null
+                                    : () async {
+                                      final generation = _catalogGeneration;
+                                      final equipo = await pickEquipment(
+                                        context,
+                                        equiposFiltrados,
+                                      );
+                                      if (mounted &&
+                                          generation == _catalogGeneration &&
+                                          equipo != null) {
+                                        setState(
+                                          () => _selectedEquipo = equipo,
+                                        );
+                                      }
+                                    },
+                            icon: const Icon(Icons.search),
+                            label: Text(
+                              _selectedEquipo == null
+                                  ? 'Buscar y seleccionar equipo'
+                                  : '${_selectedEquipo!['eqModelo'] ?? 'Cambiar equipo'}',
+                            ),
                           ),
                           if (_selectedEquipo != null)
                             Text(

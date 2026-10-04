@@ -1,0 +1,139 @@
+{
+  "version": "2026-10-02.1",
+  "terms": [
+    {
+      "heading": true,
+      "text": "Uso del portal de soporte"
+    },
+    {
+      "heading": false,
+      "text": "Este portal es operado por MR COMPUTER SOLUTIONS, S.A. DE C.V., comercialmente MR Solutions, para gestionar servicios, equipos, pólizas, tickets y comunicaciones de soporte de clientes autorizados."
+    },
+    {
+      "heading": true,
+      "text": "Tu cuenta y la información que compartes"
+    },
+    {
+      "heading": false,
+      "text": "Usa únicamente tu cuenta, protege tu contraseña y los códigos recibidos por correo y comunica accesos no reconocidos. Mantén actualizados tus datos de contacto. No intentes acceder a información ajena, alterar permisos, cargar código malicioso o afectar la disponibilidad del servicio."
+    },
+    {
+      "heading": false,
+      "text": "Comparte únicamente archivos e información que estés autorizado a entregar. Antes de subir logs, retira contraseñas, tokens y datos personales innecesarios. Los administradores deben contar con autorización para registrar solicitudes a nombre de otras personas."
+    },
+    {
+      "heading": true,
+      "text": "Cobertura, tiempos y seguimiento"
+    },
+    {
+      "heading": false,
+      "text": "Las coberturas, exclusiones, tiempos de respuesta y condiciones económicas son los de la póliza o contrato aplicable. Crear un ticket no amplía automáticamente la cobertura ni sustituye esos acuerdos. Los indicadores del portal permiten seguimiento; cualquier discrepancia debe revisarse contra los registros y el contrato."
+    },
+    {
+      "heading": false,
+      "text": "Las acciones, conversaciones, archivos y firmas se conservan como parte del expediente del servicio. Revisa la información antes de confirmar, cancelar una solicitud o firmar una hoja. Estos términos no implican una renuncia general a derechos ni eximen a MR Solutions de obligaciones legales o contractuales."
+    },
+    {
+      "heading": true,
+      "text": "Verificación obligatoria y avisos de servicio"
+    },
+    {
+      "heading": false,
+      "text": "La verificación en dos pasos por correo es obligatoria debido a la información confidencial y los datos personales que pueden tratarse en el portal. Mantén un correo accesible y verifica cualquier sustitución. Los códigos de seguridad no se desactivan mediante las preferencias de notificación."
+    },
+    {
+      "heading": false,
+      "text": "Desactivar o no habilitar avisos puede retrasar la recepción de solicitudes, confirmaciones y ventanas de atención, afectando el seguimiento del ticket y de sus SLA. Los tiempos y responsabilidades siguen sujetos a la póliza: esta elección no modifica automáticamente el cómputo del SLA ni exime a MR Solutions de sus obligaciones."
+    },
+    {
+      "heading": true,
+      "text": "Disponibilidad y cambios"
+    },
+    {
+      "heading": false,
+      "text": "Puede haber mantenimientos o interrupciones. Si el portal no está disponible, utiliza los medios de contacto establecidos en tu contrato. Las modificaciones relevantes de estos términos se identificarán con una nueva versión y se solicitará su aceptación cuando corresponda."
+    },
+    {
+      "heading": false,
+      "text": "Contacto de privacidad: ventas@mrsolutions.com.mx."
+    }
+  ],
+  "privacy": [
+    {
+      "heading": true,
+      "text": "Responsable y contacto"
+    },
+    {
+      "heading": false,
+      "text": "MR COMPUTER SOLUTIONS, S.A. DE C.V., comercialmente MR Solutions, con domicilio en Alhambra 813 Bis, Portales Sur, Benito Juárez, C.P. 03300, Ciudad de México, México, es responsable del tratamiento descrito en este aviso."
+    },
+    {
+      "heading": true,
+      "text": "Datos utilizados y finalidades del servicio"
+    },
+    {
+      "heading": false,
+      "text": "Tratamos datos de identidad y contacto de usuarios y personal, su relación con clientes, sedes y zonas, datos de equipos y pólizas, tickets, mensajes, logs, adjuntos, firmas en hojas de servicio y documentos necesarios para coordinar visitas. También registros técnicos de seguridad, preferencias y datos de dispositivos vinculados a notificaciones."
+    },
+    {
+      "heading": false,
+      "text": "Se utilizan para autenticarte —incluido el código de acceso por correo—, prestar soporte, coordinar atención y acceso a instalaciones, dar seguimiento a SLA, emitir reportes y proteger el portal. La aceptación del portal no autoriza campañas de publicidad ni usos distintos. Las preferencias de correo y notificaciones de servicio se administran en Configuración; los mensajes de seguridad son necesarios para acceder."
+    },
+    {
+      "heading": false,
+      "text": "Evita subir datos sensibles, identificaciones, contraseñas o secretos en chats y logs si no son necesarios para el servicio. Los documentos de acceso de trabajadores deben entregarse solo en los apartados autorizados y en la medida exigida para la visita."
+    },
+    {
+      "heading": true,
+      "text": "Acceso, proveedores y comunicaciones"
+    },
+    {
+      "heading": false,
+      "text": "Acceden el personal autorizado de MR Solutions y los usuarios del cliente según su rol y alcance. Utilizamos hosting y proveedores de correo; Firebase y los servicios de notificación del navegador intervienen cuando se vincula un dispositivo. Estos servicios pueden procesar datos fuera de México. No se autoriza compartir información sin límite: las comunicaciones que requieran consentimiento adicional deberán informarse y autorizarse por separado."
+    },
+    {
+      "heading": true,
+      "text": "Seguridad y comunicaciones operativas"
+    },
+    {
+      "heading": false,
+      "text": "El acceso en dos pasos por correo es obligatorio para proteger los datos confidenciales y personales del servicio. Verificamos el nuevo correo antes de sustituir el anterior y notificamos el cambio. Los avisos opcionales pueden desactivarse tras una advertencia sobre los posibles retrasos de seguimiento; los mensajes de seguridad necesarios para acceder no se desactivan."
+    },
+    {
+      "heading": false,
+      "text": "Los cambios de tickets hechos por clientes pueden generar correos al ingeniero asignado y a destinatarios operativos autorizados por la superadministración. Se comunican datos mínimos de identificación y del evento; los adjuntos y logs permanecen en el portal con sus controles de acceso. Esta distribución no tiene finalidad publicitaria."
+    },
+    {
+      "heading": true,
+      "text": "Conservación y seguridad"
+    },
+    {
+      "heading": false,
+      "text": "El expediente se conserva durante la atención y la relación de servicio, y posteriormente según las obligaciones legales, contractuales y la atención de responsabilidades aplicables. Puedes solicitar información sobre el plazo de tu expediente. Se aplican controles de acceso, validación, sesiones con caducidad y protección de archivos; no existe una garantía de riesgo cero."
+    },
+    {
+      "heading": true,
+      "text": "Derechos ARCO y revocación"
+    },
+    {
+      "heading": false,
+      "text": "Puedes solicitar acceso, rectificación, cancelación u oposición; también revocar el consentimiento o limitar el uso y divulgación, con las excepciones legales aplicables. Escribe a ventas@mrsolutions.com.mx con el asunto “Privacidad y derechos ARCO”. Indica tu nombre, un medio de respuesta, el derecho que deseas ejercer y elementos que permitan localizar la información. Para rectificación, señala la corrección y su soporte. Te indicaremos cómo acreditar tu identidad o representación; no adjuntes identificaciones al formulario comercial."
+    },
+    {
+      "heading": true,
+      "text": "Actualizaciones"
+    },
+    {
+      "heading": false,
+      "text": "Los cambios se publican aquí con una versión identificable. La aceptación registrada identifica la cuenta, versión y fecha; no incluye consentimiento publicitario. Este aviso del portal complementa el aviso corporativo para las finalidades específicas del servicio."
+    },
+    {
+      "heading": false,
+      "text": "Consultar el aviso corporativo de MR Solutions (https://greenyellow-rook-684355.hostingersite.com/privacidad)"
+    },
+    {
+      "heading": false,
+      "text": "Contacto de privacidad: ventas@mrsolutions.com.mx."
+    }
+  ]
+}

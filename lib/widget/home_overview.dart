@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'mr_components.dart';
@@ -26,9 +27,11 @@ class HomeOverview extends StatelessWidget {
     required this.onSite,
     required this.onRefresh,
     this.avatarUrl = '',
+    this.onMessages,
     this.error,
   });
   final String name;
+  final VoidCallback? onMessages;
   final String avatarUrl;
   final bool loading;
   final String? error;
@@ -64,6 +67,15 @@ class HomeOverview extends StatelessWidget {
               onNotifications: onNotifications,
             ),
             const SizedBox(height: 24),
+            if (onMessages != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: OutlinedButton.icon(
+                  onPressed: onMessages,
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('Mensajes de soporte'),
+                ),
+              ),
             _OverviewHero(
               loading: loading,
               openTickets: openTickets,
@@ -166,6 +178,13 @@ class HomeOverview extends StatelessWidget {
               ),
               ...healthChecks.map(
                 (item) => _AgendaItem(item: item, onTap: () => onHealth(item)),
+              ),
+            ],
+            if (!loading && healthChecks.isEmpty) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Puedes solicitar Health Checks; la consulta de la agenda no está publicada en el servidor actual.',
+                style: TextStyle(color: MRSColors.muted, fontSize: 12),
               ),
             ],
             if (sites.isNotEmpty) ...[
@@ -271,7 +290,7 @@ class _OverviewHeader extends StatelessWidget {
                         Icons.person_outline_rounded,
                         color: MRSColors.accent,
                       )
-                      : Image.network(
+                      : SessionImage(
                         avatarUrl,
                         fit: BoxFit.cover,
                         errorBuilder:

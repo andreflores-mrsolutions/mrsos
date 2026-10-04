@@ -1,5 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MR Solutions: code-native monochrome tracing of assets/icon/mr_icon.png.
+     Android tints small notification icons; keep the background transparent. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="1024" android:viewportHeight="1024">
     <path android:fillColor="#FFFFFFFF"
-        android:pathData="M12,22a2,2 0,0 0,2 -2h-4a2,2 0,0 0,2 2M18,16v-5c0,-3.1 -1.6,-5.6 -4.5,-6.3V4a1.5,1.5 0,0 0,-3 0v0.7C7.6,5.4 6,7.9 6,11v5l-2,2v1h16v-1z" />
+        android:pathData="M193,243 L338,432 L338,243 L582,560 L543,560 Q530,560 522,550 L384,370 L384,560 L235,368 L235,439 L193,439 Z M402,242 L593,242 C651,242 687,282 692,336 C697,389 662,424 594,428 L690,560 L647,560 Q640,560 636,552 L508,383 L593,383 C627,383 647,366 647,337 C647,308 628,285 594,285 L444,285 Q434,285 429,277 Z M59,576 L772,576 C827,576 829,661 772,661 L59,661 C2,661 2,576 59,576 Z M715,261 C877,322 987,425 1004,509 C1046,703 689,823 333,774 C218,758 132,730 73,705 C423,817 845,739 925,567 C983,443 864,335 715,261 Z" />
 </vector>

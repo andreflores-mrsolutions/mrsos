@@ -59,7 +59,11 @@ class LocalNotify {
   }
 
   static Future<void> clear() async {
-    if (_initialized) await _plugin.cancelAll();
+    if (_initialized) {
+      try {
+        await _plugin.cancelAll();
+      } catch (_) {}
+    }
   }
 
   static Future<void> show({

@@ -12,6 +12,16 @@ import 'package:mrsos/screens/createticket_screen.dart';
 import 'package:mrsos/screens/createhealth_screen.dart';
 import 'package:mrsos/screens/ticket_detail_screen.dart';
 import 'package:mrsos/screens/user_profile_screen.dart';
+import 'package:mrsos/screens/schedule_screen.dart';
+import 'package:mrsos/screens/survey_screen.dart';
+import 'package:mrsos/screens/client_user_detail_screen.dart';
+import 'package:mrsos/screens/log_guides_screen.dart';
+import 'package:mrsos/screens/chat_screen.dart';
+import 'package:mrsos/screens/email_change_screen.dart';
+import 'package:mrsos/screens/meeting_confirmation_screen.dart';
+import 'package:mrsos/screens/access_gate_screen.dart';
+import 'package:mrsos/screens/mfa_screen.dart';
+import 'package:mrsos/services/auth_service.dart';
 import 'package:mrsos/widget/mr_theme.dart';
 
 const deviceFixture = {
@@ -35,12 +45,99 @@ final requests = <RequestOptions>[];
 
 Map<String, dynamic> responseFor(RequestOptions options) {
   final path = options.uri.path;
+  if (RegExp(
+    r'/(getIndexData|usuarios_listado|equipo_detalle|detalle_health_check|guardar_onboarding_app|adm_usuario_.*)\.php$',
+  ).hasMatch(path)) {
+    throw StateError('The new gateway does not publish $path');
+  }
+  if (path.endsWith('/me.php'))
+    return {
+      'success': true,
+      'usId': 42,
+      'usNombre': 'Darwin',
+      'usAPaterno': 'Martínez',
+      'usCorreo': 'demo@example.invalid',
+      'usTelefono': '555 010 2040',
+      'usUsername': 'darwin.demo',
+      'rol': 'CLI',
+      'ucrRol': 'ADMIN_SEDE',
+      'csrfToken': 'fixture-csrf',
+      'legalAccepted': true,
+      'legalVersion': '2026-10-02.1',
+      'clId': 8,
+      'csId': 1,
+      'preferences': {'notifInApp': true, 'notifMail': true},
+    };
+  if (path.endsWith('/meet_get.php') || path.endsWith('/visita_get.php'))
+    return {
+      'success': true,
+      'autorTipo': 'ingeniero',
+      'meet': {'estado': 'pendiente'},
+      'visita': {'tiVisitaEstado': 'pendiente'},
+      'accepted': null,
+      'propuestas': [
+        {
+          'mpId': 50,
+          'vpId': 60,
+          'mpInicio': '2027-01-10 10:00:00',
+          'mpFin': '2027-01-10 10:30:00',
+          'mpEstado': 'pendiente',
+          'vpEstado': 'pendiente',
+        },
+      ],
+    };
+  if (path.endsWith('ticket_catalog_sedes.php')) {
+    return {
+      'success': true,
+      'sedes': [
+        {
+          'csId': 1,
+          'csNombre': deviceFixture['csNombre'],
+          'healthCheckAvailable': true,
+        },
+      ],
+    };
+  }
+  if (path.endsWith('ticket_catalog_equipos.php')) {
+    return {
+      'success': true,
+      'equipos': [
+        {
+          ...deviceFixture,
+          'modelo': deviceFixture['eqModelo'],
+          'marca': deviceFixture['maNombre'],
+          'sn': deviceFixture['peSN'],
+          'healthCheckAvailable': true,
+        },
+      ],
+    };
+  }
+  if (path.endsWith('tickets_list.php')) {
+    return {
+      'success': true,
+      'meta': {'abiertos': 8, 'accion': 1, 'curso': 2},
+      'tickets': [
+        {
+          ...ticketFixture,
+          'tiEstatus': 'Abierto',
+          'requiereAccionCliente': true,
+        },
+      ],
+    };
+  }
+  if (path.endsWith('mis_equipos_poliza.php')) {
+    return {
+      'success': true,
+      'total_equipos': 1,
+      'equipos': [deviceFixture],
+    };
+  }
   if (path.endsWith('obtener_equipo_poliza.php'))
     return {
       'success': true,
       'equipos': [deviceFixture],
     };
-  if (path.endsWith('detalle_ticket.php'))
+  if (path.endsWith('ticket_detail.php'))
     return {
       'success': true,
       'ticket': {
@@ -93,45 +190,40 @@ Map<String, dynamic> responseFor(RequestOptions options) {
         },
       ],
     };
-  if (path.endsWith('reportes_listar.php'))
+  if (path.endsWith('hoja_servicio_list.php'))
     return {
       'success': true,
-      'count': 1,
-      'sedes': [
+      'total': 1,
+      'hojas': [
         {
+          'hsId': 1042,
+          'hsFolio': 'HS 1042',
+          'clId': 8,
+          'clNombre': 'MR',
           'csNombre': 'Corporativo Ciudad de México',
-          'items': [
-            {
-              'folio': 'HS - 1042',
-              'equipo': 'PowerEdge R740 · Revisión técnica',
-              'url': 'https://example.invalid/fixture.pdf',
-            },
-          ],
+          'eqModelo': 'PowerEdge R740',
+          'downloadUrl':
+              'backend/admin/api/hoja_servicio_download.php?hsId=1042',
         },
       ],
-      'polizas': [],
     };
-  if (path.endsWith('usuarios_listado.php'))
+  if (path.endsWith('usuario_cli_list.php'))
     return {
       'success': true,
-      'filters': {},
-      'sedes': [
+      'usuarios': [
         {
-          'titulo': 'Corporativo Ciudad de México',
-          'usuarios': [
-            {
-              'usId': 1,
-              'nombre': 'Ana Martínez',
-              'rol': 'Administrador',
-              'avatar': '0',
-            },
-            {
-              'usId': 2,
-              'nombre': 'Diego Hernández',
-              'rol': 'Contacto técnico',
-              'avatar': '0',
-            },
-          ],
+          'usId': 1,
+          'usNombre': 'Ana',
+          'usAPaterno': 'Martínez',
+          'usEstatus': 'Activo',
+          'usImagen': '0',
+        },
+        {
+          'usId': 2,
+          'usNombre': 'Diego',
+          'usAPaterno': 'Hernández',
+          'usEstatus': 'Activo',
+          'usImagen': '0',
         },
       ],
     };
@@ -191,11 +283,56 @@ void main() {
   });
 
   for (final entry in <(String, Widget Function())>[
+    ('mensajes', () => const ChatsScreen()),
+    ('chat-ticket', () => const TicketChatScreen(tiId: 1042, folio: 'MR-1042')),
+    ('verificar-correo', () => const EmailChangeScreen()),
+    ('confirmar-reunion', () => const MeetingConfirmationScreen(proposal: {})),
+    (
+      'codigo-acceso',
+      () => MfaScreen(
+        auth: AuthService(dio: AppHttp.I.dio, loginPath: '/login.php'),
+        challenge: LoginResult(
+          success: true,
+          message: '',
+          forceChangePass: false,
+          onboardingRequired: false,
+          mfaRequired: true,
+          expiresIn: 600,
+          emailHint: 'd***@example.invalid',
+        ),
+      ),
+    ),
+    (
+      'consentimiento',
+      () {
+        final dio = Dio(
+          BaseOptions(baseUrl: 'https://ui-fixtures.invalid/php'),
+        );
+        dio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest:
+                (options, handler) => handler.resolve(
+                  Response(
+                    requestOptions: options,
+                    statusCode: 200,
+                    data: {...responseFor(options), 'legalAccepted': false},
+                  ),
+                ),
+          ),
+        );
+        return AccessGateScreen(dio: dio);
+      },
+    ),
     (
       'nuevo-ticket',
       () =>
           const CreateTicketScreen(baseUrl: 'https://ui-fixtures.invalid/php'),
     ),
+    ('reunion', () => const ScheduleScreen(ticketId: 1042, visit: false)),
+    ('visita', () => const ScheduleScreen(ticketId: 1042, visit: true)),
+    ('encuesta', () => const SurveyScreen(ticketId: 1042)),
+    ('guías', () => const LogGuidesScreen()),
+    ('persona', () => const ClientUserDetailScreen(usId: 1)),
     (
       'health-check',
       () => const HealthCheckScreen(baseUrl: 'https://ui-fixtures.invalid/php'),
@@ -212,6 +349,7 @@ void main() {
     for (final scale in [1.0, 1.6]) {
       testWidgets('${entry.$1} content fits at scale $scale', (tester) async {
         SharedPreferences.setMockInitialValues({
+          'mrs_usRol': 'CLI',
           'mrs_usNombre': 'Darwin',
           'mrs_usAPaterno': 'Martínez',
           'mrs_usCorreo': 'demo@example.invalid',
@@ -256,6 +394,141 @@ void main() {
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }
+  }
+
+  for (final role in ['CLI', 'MRA']) {
+    testWidgets('ticket creation sends the scoped $role contract', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(480, 1800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      AppHttp.I.dio.interceptors.clear();
+      AppHttp.I.dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            requests.add(options);
+            final path = options.uri.path;
+            final data =
+                path.endsWith('/me.php')
+                    ? {...responseFor(options), 'rol': role}
+                    : path.endsWith('/cliente_list.php')
+                    ? {
+                      'success': true,
+                      'clientes': [
+                        {'clId': 8, 'clNombre': 'Cliente autorizado'},
+                      ],
+                    }
+                    : path.endsWith('/ticket_catalog_sedes.php')
+                    ? {
+                      'success': true,
+                      'sedes': [
+                        {'csId': 7, 'csNombre': 'Sede autorizada'},
+                      ],
+                    }
+                    : path.endsWith('/ticket_catalog_clientes.php')
+                    ? {
+                      'success': true,
+                      'clientes': [
+                        {
+                          'usId': 99,
+                          'nombre': 'Responsable autorizado',
+                          'correo': 'responsible@example.invalid',
+                          'telefono': '5555555555',
+                        },
+                      ],
+                    }
+                    : path.endsWith('/ticket_catalog_equipos.php')
+                    ? {
+                      'success': true,
+                      'equipos': [
+                        {
+                          'peId': 12,
+                          'eqId': 10,
+                          'modelo': 'R740',
+                          'sn': 'SN-321',
+                        },
+                      ],
+                    }
+                    : path.endsWith('/ticket_create.php')
+                    ? {'success': true, 'tiId': 200}
+                    : responseFor(options);
+            handler.resolve(
+              Response(requestOptions: options, statusCode: 200, data: data),
+            );
+          },
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder:
+                (context) => Scaffold(
+                  body: TextButton(
+                    onPressed:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (_) => const CreateTicketScreen(
+                                  baseUrl: 'https://ui-fixtures.invalid/php',
+                                ),
+                          ),
+                        ),
+                    child: const Text('Abrir creación'),
+                  ),
+                ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Abrir creación'));
+      await tester.pumpAndSettle();
+      if (role == 'MRA') {
+        await tester.tap(find.byType(DropdownButton<int>).at(0));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cliente autorizado').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DropdownButton<int>).at(1));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Sede autorizada').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DropdownButton<int>).at(2));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Responsable autorizado').last);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Buscar y seleccionar equipo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('R740'));
+      await tester.pumpAndSettle();
+      final description = find.byWidgetPredicate(
+        (w) => w is TextField && w.maxLines == 5,
+      );
+      await tester.ensureVisible(description);
+      await tester.enterText(description, 'Incidente de prueba local');
+      await tester.ensureVisible(find.text('Crear Ticket'));
+      await tester.tap(find.text('Crear Ticket'));
+      await tester.pumpAndSettle();
+      final post =
+          requests
+              .where((r) => r.uri.path.endsWith('/ticket_create.php'))
+              .single;
+      expect(
+        post.uri.path,
+        '/${role == 'CLI' ? 'dashboard' : 'backend'}/api/ticket_create.php',
+      );
+      expect(post.data['peId'], 12);
+      expect(post.data['eqId'], 10);
+      expect(post.data['csId'], 7);
+      expect(post.data.containsKey('usId'), false);
+      if (role == 'MRA') {
+        expect(post.data['clId'], 8);
+        expect(post.data['usIdCliente'], 99);
+        expect(post.data['tiCorreoContacto'], 'responsible@example.invalid');
+      } else {
+        expect(post.data.containsKey('usIdCliente'), false);
+        expect(post.data.containsKey('clId'), false);
+      }
+      expect(tester.takeException(), isNull);
+    });
   }
 
   for (final size in [const Size(320, 740), const Size(390, 844)]) {
@@ -319,7 +592,7 @@ void main() {
           isTrue,
         );
         expect(
-          requests.any((r) => r.path.endsWith('/usuarios_listado.php')),
+          requests.any((r) => r.path.endsWith('/usuario_cli_list.php')),
           isTrue,
         );
         await tester.pumpWidget(const SizedBox.shrink());
@@ -340,7 +613,11 @@ void main() {
     await tester.enterText(find.byType(TextField), 'HS 1042');
     await tester.tap(find.byTooltip('Buscar documentos'));
     await tester.pumpAndSettle();
-    expect(requests.last.queryParameters['q'], 'HS 1042');
+    expect(requests.last.uri.path, '/backend/admin/api/hoja_servicio_list.php');
+    expect(
+      find.byWidgetPredicate((w) => w is Text && w.data == 'HS 1042'),
+      findsOneWidget,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

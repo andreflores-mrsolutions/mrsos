@@ -112,23 +112,6 @@ class SessionStore {
     }
   }
 
-  Future<void> debugDump({String tag = 'SessionStore'}) async {
-    final sp = await SharedPreferences.getInstance();
-    print('[$tag] logged=${sp.getBool(_kLogged) ?? false}');
-    print('[$tag] usId=${sp.getString(_kUsId)}');
-    print('[$tag] usNombre=${sp.getString(_kUsNombre)}');
-    print('[$tag] usAPaterno=${sp.getString(_kUsAPaterno)}');
-    print('[$tag] usAMaterno=${sp.getString(_kUsAMaterno)}');
-    print('[$tag] usCorreo=${sp.getString(_kUsCorreo)}');
-    print('[$tag] usTelefono=${sp.getString(_kUsTelefono)}');
-    print('[$tag] usUsername=${sp.getString(_kUsUsername)}');
-    print('[$tag] usImagen=${sp.getString(_kUsImagen)}');
-    print('[$tag] ucrRol=${sp.getString(_kUcrRol)}');
-    print('[$tag] czId=${sp.getInt(_kCzId)}');
-    print('[$tag] csId=${sp.getInt(_kCsId)}');
-    print('[$tag] ucrClId=${sp.getInt(_kUcrClId)}');
-  }
-
   static Future<String> ucrRol() async {
     final sp = await SharedPreferences.getInstance();
     return sp.getString(_kUcrRol) ?? '';

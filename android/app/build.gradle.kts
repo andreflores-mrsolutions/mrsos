@@ -1,9 +1,32 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+    }
+
+val mrsSigningFile = rootProject.file("key.properties")
+val mrsSigning = Properties().apply {
+    if (mrsSigningFile.exists()) mrsSigningFile.inputStream().use { load(it) }
+}
+
+val validateMrsosReleaseSigning = tasks.register("validateMrsosReleaseSigning") {
+    doLast {
+        check(mrsSigningFile.exists() &&
+            listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+                .all { !mrsSigning.getProperty(it).isNullOrBlank() }) {
+            "Configura android/key.properties con la firma de MRSoS antes de compilar release. Consulta docs/php-firebase-ios-integration.md."
+        }
+        check(file(mrsSigning.getProperty("storeFile")).isFile) {
+            "No se encontro el keystore configurado. No se usara la firma debug para release."
+        }
+    }
+}
+tasks.configureEach {
+    if (name == "preReleaseBuild") dependsOn(validateMrsosReleaseSigning)
 }
 
 android {
@@ -33,13 +56,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = mrsSigning.getProperty("keyAlias")
+            keyPassword = mrsSigning.getProperty("keyPassword")
+            storeFile = mrsSigning.getProperty("storeFile")?.let { file(it) }
+            storePassword = mrsSigning.getProperty("storePassword")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Production builds must use the owner's upload certificate.
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             
         }
     }
@@ -51,4 +82,6 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }

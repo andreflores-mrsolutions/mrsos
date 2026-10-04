@@ -5,6 +5,7 @@ import 'config/app_config.dart';
 import 'services/push_service.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/access_gate_screen.dart';
 
 import 'services/app_http.dart';
 import 'screens/splash_gate.dart';
@@ -17,17 +18,37 @@ Future<void> main() async {
 
   await AppHttp.init(baseUrl: AppConfig.apiBaseUrl);
   var expiring = false;
+  var gating = false;
+  AppHttp.I.onAccessRequired = () {
+    if (gating || expiring) return;
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return;
+    gating = true;
+    PushService.I.lock();
+    navigator
+        .pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AccessGateScreen()),
+          (_) => false,
+        )
+        .whenComplete(() => gating = false);
+  };
   AppHttp.I.onSessionExpired = () async {
     if (expiring) return;
     expiring = true;
-    await PushService.I.sessionExpired();
-    await AppHttp.I.clearSession();
-    await DocumentService.clearCache();
-    navigatorKey.currentState?.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const WelcomeLoginScreen()),
-      (_) => false,
-    );
-    expiring = false;
+    PushService.I.lock();
+    try {
+      await AppHttp.I.clearSession();
+      await PushService.I.sessionExpired();
+      try {
+        await DocumentService.clearCache();
+      } catch (_) {}
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const WelcomeLoginScreen()),
+        (_) => false,
+      );
+    } finally {
+      expiring = false;
+    }
   };
   PushService.I.onOpenInbox = () {
     navigatorKey.currentState?.push(

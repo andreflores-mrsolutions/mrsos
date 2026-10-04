@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/screens/equipos/equipo_detalle_screen.dart';
 import 'package:mrsos/services/app_http.dart';
@@ -312,7 +313,10 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder:
-                                  (_) => MisEquiposDetalleScreen(peId: peId),
+                                  (_) => MisEquiposDetalleScreen(
+                                    peId: peId,
+                                    pcId: widget.pcId,
+                                  ),
                             ),
                           );
                         },
@@ -338,11 +342,13 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                                 borderRadius: BorderRadius.circular(18),
                                 child: AspectRatio(
                                   aspectRatio: 16 / 6.2,
-                                  child: Image.network(
-                                    _imgEquipo(
-                                      marca,
-                                      modelo.replaceAll('  ', ' '),
-                                    ),
+                                  child: SessionImage(
+                                    '${e['eqImgPath'] ?? ''}'.isNotEmpty
+                                        ? '${e['eqImgPath']}'
+                                        : _imgEquipo(
+                                          marca,
+                                          modelo.replaceAll('  ', ' '),
+                                        ),
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, __, ___) {
                                       return Container(
@@ -413,8 +419,10 @@ class _MisEquiposPolizaScreenState extends State<MisEquiposPolizaScreen> {
                               // Logo marca grande
                               SizedBox(
                                 height: 54,
-                                child: Image.network(
-                                  _imgMarca(marca),
+                                child: SessionImage(
+                                  '${e['maImgPath'] ?? ''}'.isNotEmpty
+                                      ? '${e['maImgPath']}'
+                                      : _imgMarca(marca),
                                   fit: BoxFit.contain,
                                   errorBuilder: (_, __, ___) {
                                     return Text(

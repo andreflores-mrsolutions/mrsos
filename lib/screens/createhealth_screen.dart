@@ -134,13 +134,13 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date == null) return;
+    if (!mounted || date == null) return;
 
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(fechaHora),
     );
-    if (time == null) return;
+    if (!mounted || time == null) return;
 
     setState(() {
       fechaHora = DateTime(
@@ -154,7 +154,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
   }
 
   Future<void> _submit() async {
-    if (csId == null) return;
+    if (sending || csId == null) return;
     if (selectedEqIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecciona al menos 1 equipo')),

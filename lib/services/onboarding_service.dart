@@ -1,30 +1,16 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'app_http.dart';
+import 'profile_service.dart';
 
 class OnboardingSaveResult {
+  const OnboardingSaveResult({required this.success, required this.message});
   final bool success;
   final String message;
-  final Map<String, dynamic>? user;
-
-  OnboardingSaveResult({
-    required this.success,
-    required this.message,
-    this.user,
-  });
-
-  factory OnboardingSaveResult.fromJson(Map<String, dynamic> j) =>
-      OnboardingSaveResult(
-        success: j['success'] == true,
-        message: (j['message'] ?? '').toString(),
-        user: (j['user'] is Map) ? Map<String, dynamic>.from(j['user']) : null,
-      );
 }
 
 class OnboardingService {
+  OnboardingService({required Dio dio}) : _dio = dio;
   final Dio _dio;
-  final String savePath; // /guardar_onboarding.php
-
-  OnboardingService({required Dio dio, required this.savePath}) : _dio = dio;
 
   Future<OnboardingSaveResult> save({
     required int usId,
@@ -36,26 +22,44 @@ class OnboardingService {
     required String usUsername,
     String pass1 = '',
     String pass2 = '',
+    MultipartFile? avatar,
   }) async {
-    final res = await _dio.post(
-      savePath,
-      data: FormData.fromMap({
-        'usId': usId,
-        'usNombre': usNombre.trim(),
-        'usAPaterno': usAPaterno.trim(),
-        'usAMaterno': usAMaterno.trim(),
-        'usCorreo': usCorreo.trim(),
-        'usTelefono': usTelefono.trim(),
-        'usUsername': usUsername.trim(),
-        'pass1': pass1,
-        'pass2': pass2,
-      }),
-    );
-
-    if (res.data is Map) {
-      return OnboardingSaveResult.fromJson(Map<String, dynamic>.from(res.data));
+    // Check the server on every explicit retry. A previous password update may
+    // have succeeded even if the following profile update failed.
+    final session = AppHttp.jsonMap((await _dio.get('/me.php')).data);
+    if (int.tryParse('${session['usId']}') != usId) {
+      throw StateError('La sesión cambió. Inicia sesión nuevamente.');
     }
-    final decoded = json.decode(res.data.toString());
-    return OnboardingSaveResult.fromJson(Map<String, dynamic>.from(decoded));
+    if (session['forceChangePass'] == true) {
+      if (pass1 != pass2 ||
+          pass1.length < 10 ||
+          !RegExp(r'[A-Za-z]').hasMatch(pass1) ||
+          !RegExp(r'\d').hasMatch(pass1)) {
+        throw StateError(
+          'Usa al menos 10 caracteres e incluye letras y números.',
+        );
+      }
+      await _dio.post(
+        '/usuario_password_primera_vez.php',
+        data: {'password': pass1, 'password2': pass2},
+      );
+      // Remember-me/password changes can renew the session/CSRF token.
+      await _dio.get('/me.php');
+    }
+    final result = await ProfileService(dio: _dio).actualizarPerfil(
+      usId: '$usId',
+      usNombre: usNombre,
+      usAPaterno: usAPaterno,
+      usAMaterno: usAMaterno,
+      usCorreo: usCorreo,
+      usTelefono: usTelefono,
+      usUsername: usUsername,
+      avatar: avatar,
+    );
+    if (result['success'] != true) throw StateError(AppHttp.message(result));
+    return const OnboardingSaveResult(
+      success: true,
+      message: 'Perfil actualizado.',
+    );
   }
 }

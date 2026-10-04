@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:mrsos/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mrsos/screens/login_screen.dart';
@@ -9,8 +8,7 @@ import 'package:mrsos/widget/colors.dart';
 
 import '../services/session_store.dart';
 import '../services/app_http.dart';
-import 'onboarding_flow_screen.dart';
-import 'home_screen.dart';
+import 'access_gate_screen.dart';
 
 class WelcomeMRSOSScreen extends StatefulWidget {
   const WelcomeMRSOSScreen({super.key});
@@ -82,31 +80,9 @@ class _WelcomeMRSOSScreenState extends State<WelcomeMRSOSScreen> {
         return;
       }
 
-      // 5) OK -> Home
-      final user = await AppHttp.I.refreshSession();
-      final usId = '${user['usId']}';
-      final userName = '${user['usNombre'] ?? 'Usuario'}';
-
       if (!mounted) return;
-
-      // ✅ Navega al Home (sin .then)
-      if (user['forceChangePass'] == true ||
-          '${user['usConfirmado']}'.toLowerCase() == 'no') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder:
-                (_) => OnboardingFlowScreen(
-                  user: user,
-                  forceChangePass: user['forceChangePass'] == true,
-                ),
-          ),
-        );
-        return;
-      }
-      navigatorKey.currentState?.pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => HomeDashboardScreen(usId: usId, userName: userName),
-        ),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AccessGateScreen()),
       );
     } catch (error) {
       if (mounted)

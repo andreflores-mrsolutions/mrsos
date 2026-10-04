@@ -17,7 +17,8 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends State<NotificationsScreen>
+    with WidgetsBindingObserver {
   late final NotificationsService _service;
   List<InboxNotification> _items = const [];
   bool _loading = true;
@@ -28,7 +29,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _service = NotificationsService(dio: AppHttp.I.dio);
+    WidgetsBinding.instance.addObserver(this);
+    NotificationInbox.unreadCount.addListener(_inboxChanged);
     _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NotificationInbox.unreadCount.removeListener(_inboxChanged);
+    super.dispose();
+  }
+
+  void _inboxChanged() {
+    if (mounted && !_loading) _load();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted && !_loading) _load();
   }
 
   Future<void> _load() async {
@@ -106,7 +125,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (ticketId != null) {
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => TicketDetailScreen(tiId: ticketId, folio: ''),
+          builder:
+              (_) => TicketDetailScreen(
+                tiId: ticketId,
+                folio: 'Ticket #$ticketId',
+              ),
         ),
       );
       return;
@@ -134,13 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ).showSnackBar(SnackBar(content: Text(_friendlyError(error))));
   }
 
-  String _friendlyError(Object error) {
-    final value = error.toString().replaceFirst('Bad state: ', '');
-    if (value.contains('401') || value.toLowerCase().contains('autenticado')) {
-      return 'Tu sesión expiró. Inicia sesión nuevamente.';
-    }
-    return value.replaceFirst('Exception: ', '');
-  }
+  String _friendlyError(Object error) => AppHttp.friendlyError(error);
 
   @override
   Widget build(BuildContext context) {

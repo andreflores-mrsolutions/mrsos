@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'dart:io';
 // ignore: unused_import
 import 'dart:convert';
@@ -21,6 +22,8 @@ import '../widget/colors.dart';
 import '../widget/mr_theme.dart';
 import '../widget/mr_components.dart';
 import 'change_password_screen.dart';
+import 'email_change_screen.dart';
+import 'legal_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
@@ -55,7 +58,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   String usImagen = '';
   File? _localAvatar;
 
-  // Preferencias (por ahora UI; si quieres las guardamos en SharedPreferences)
+  // Preferencias compartidas con la cuenta web.
   bool prefNotificaciones = true;
   bool prefCorreos = true;
   NotificationPreferences? _preferences;
@@ -100,6 +103,37 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (_savingPreferences || _preferences == null) return;
     setState(() => _savingPreferences = true);
     try {
+      final old = _preferences!;
+      final disabling =
+          (old.inApp && !value.inApp) ||
+          (old.mail && !value.mail) ||
+          (old.ticketChanges && !value.ticketChanges) ||
+          (old.meet && !value.meet) ||
+          (old.visit && !value.visit) ||
+          (old.folio && !value.folio);
+      if (disabling) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('¿Desactivar estos avisos?'),
+                content: const Text(
+                  'Podrías recibir tarde solicitudes, confirmaciones y ventanas de atención. Esto no cambia los SLA ni las obligaciones de la póliza. Los códigos de seguridad por correo seguirán activos.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Mantener avisos'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Desactivar'),
+                  ),
+                ],
+              ),
+        );
+        if (!mounted || confirmed != true) return;
+      }
       await NotificationsService(dio: AppHttp.I.dio).savePreferences(value);
       if (!mounted) return;
       setState(() {
@@ -162,6 +196,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     // Checamos soporte real del dispositivo
     final supported = await _auth.isDeviceSupported();
     final canCheck = await _auth.canCheckBiometrics;
+    if (!mounted) return;
 
     // Si estaba activado pero YA NO hay soporte/permiso -> apagar y guardar
     if (saved && !(supported && canCheck)) {
@@ -176,10 +211,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _loadProfile() async {
     setState(() => _loading = true);
 
+    try {
+      await AppHttp.I.refreshSession();
+      await _loadPreferences();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Mostrando datos guardados. ${AppHttp.friendlyError(error)}',
+            ),
+          ),
+        );
+    }
     final p = await SessionStore().getProfile();
-    print('=== MIS DATOS: PROFILE FROM STORE ===');
-    print(p);
-    print('====================================');
 
     if (!mounted) return;
     setState(() {
@@ -198,7 +243,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   String get fullName => '$usNombre $usAPaterno $usAMaterno'.trim();
 
   // ✅ server base (sin /php)
-  String get _serverBase => widget.baseUrl.replaceAll('/php', '');
 
   String? get avatarUrl => AppConfig.avatarUrl(usImagen, username: usUsername);
   String get brandFallbackAvatarByUsername => AppConfig.avatarUrl('0');
@@ -268,7 +312,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         final msg =
             (res['error'] ?? res['message'] ?? 'No se pudo actualizar')
                 .toString();
-        print('=== ERROR actualizarPerfil: $msg ===');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -278,7 +321,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      print('=== ERROR actualizarPerfil: $e ===');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -442,7 +484,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         avatarUrl ??
         (usUsername.isNotEmpty ? brandFallbackAvatarByUsername : null);
     if (url == null) return null;
-    return NetworkImage(url);
+    return SessionImageProvider(url);
   }
 
   @override
@@ -581,13 +623,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 onEdit:
                     _loading
                         ? () {}
-                        : () => _openEditFieldSheet(
-                          title: 'Correo Electrónico',
-                          icon: Icons.mail_rounded,
-                          initial: usCorreo,
-                          keyboardType: TextInputType.emailAddress,
-                          apply: (v) => usCorreo = v,
-                        ),
+                        : () async {
+                          final email = await Navigator.of(
+                            context,
+                          ).push<String>(
+                            MaterialPageRoute(
+                              builder: (_) => const EmailChangeScreen(),
+                            ),
+                          );
+                          if (!mounted || email == null) return;
+                          setState(() => usCorreo = email);
+                          final cached = await SessionStore().getProfile();
+                          await SessionStore.saveServerSession({
+                            ...cached,
+                            'usCorreo': email,
+                            'clId': cached['ucrClId'],
+                          });
+                          if (!mounted) return;
+                          await _loadProfile();
+                        },
               ),
               const SizedBox(height: 20),
 
@@ -746,6 +800,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(height: 20),
 
               // Cerrar sesión
+              const LegalLinks(),
               SizedBox(
                 height: 48,
                 child: ElevatedButton(

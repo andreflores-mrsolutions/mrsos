@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../services/visita_service.dart';
@@ -133,7 +134,7 @@ class _VisitaAsignarScreenState extends State<VisitaAsignarScreen> {
       child:
           (url.isEmpty)
               ? Icon(fallbackIcon, color: purple.withOpacity(.7))
-              : Image.network(
+              : SessionImage(
                 url,
                 fit: BoxFit.cover,
                 errorBuilder:

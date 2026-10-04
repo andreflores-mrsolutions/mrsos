@@ -1,12 +1,11 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'chat_screen.dart';
+import 'schedule_screen.dart';
+import 'survey_screen.dart';
+import '../config/app_config.dart';
 import 'package:mrsos/screens/acciones/subir_logs_screen.dart';
-import 'package:mrsos/screens/meet_cambiar_screen.dart';
-import 'package:mrsos/screens/meet_generar_screen.dart';
-import 'package:mrsos/screens/meet_proponer_screen.dart';
-import 'package:mrsos/screens/visita_actions_sheet.dart';
-import 'package:mrsos/screens/visita_datos_screen.dart';
-import 'package:mrsos/services/meet_service.dart';
 import '../services/index_service.dart';
 import '../services/app_http.dart'; // o tu cliente Dio actual
 import '../widget/colors.dart';
@@ -35,6 +34,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   late final IndexService api;
 
   bool _loading = true;
+  String? _error;
   Map<String, dynamic> d = {};
 
   // Orden de procesos (para %)
@@ -66,7 +66,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final r = await api.detalleTicket(tiId: widget.tiId);
       final ticket =
@@ -74,258 +77,44 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               ? Map<String, dynamic>.from(r['ticket'])
               : <String, dynamic>{};
 
-      setState(() => d = ticket);
+      if (mounted) setState(() => d = ticket);
+    } catch (error) {
+      if (mounted) setState(() => _error = AppHttp.friendlyError(error));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppHttp.friendlyError(error)),
+            action: SnackBarAction(label: 'Reintentar', onPressed: _load),
+          ),
+        );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _openVisitaFlow(Map<String, dynamic> t) async {
-    final est = _s(t['tiVisitaEstado']).toLowerCase().trim();
-
-    // 1) Sin visita -> sheet con Asignar / Proponer
-    if (est.isEmpty) {
-      await showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
         builder:
-            (_) => VisitaAccionesSheet(
-              tiId: t['tiId'],
-              ticket: t,
-              modo: VisitaAccionesModo.crear, // solo Asignar/Proponer
-            ),
-      );
-      return;
-    }
-
-    // 2) Pendiente / Confirmar -> sheet con Ver / Modificar / Cancelar
-    if (est == 'pendiente' || est == 'confirmar') {
-      await showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        builder:
-            (_) => VisitaAccionesSheet(
-              tiId: t['tiId'],
-              ticket: t,
-              modo: VisitaAccionesModo.gestionar, // Modificar/Cancelar (+ ver)
-            ),
-      );
-      return;
-    }
-    if (est == 'datos_extra') {
-      return;
-    }
-    // 3) Requiere folio -> directo a Datos
-    if (est == 'requiere_folio') {
-      final ok = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VisitaDatosScreen(tiId: t['tiId'], ticket: t),
-        ),
-      );
-      if (ok == true) await _load(); // recargar ticket detail
-      return;
-    }
-
-    // default
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Estado de visita no reconocido.')),
+            (_) =>
+                ScheduleScreen(ticketId: widget.tiId, visit: true, ticket: t),
+      ),
     );
-  }
-
-  bool _isMrFromTicket(Map<String, dynamic> t) {
-    final rol = _s(t['usRol']).toUpperCase();
-    if (rol.contains('MR')) return true;
-    if (rol.contains('ADMIN')) return true;
-    return false; // default cliente
+    if (mounted) await _load();
   }
 
   Future<void> _openMeetActions() async {
-    final isMr = _isMrFromTicket(d);
-
-    final estado = _s(d['tiMeetEstado']).toLowerCase().trim();
-    final modo = _s(d['tiMeetModo']).toLowerCase().trim();
-
-    final hasMeet = estado.isNotEmpty;
-    final pending = estado == 'pendiente';
-
-    final propuestoPorOtro =
-        pending &&
-        ((isMr && modo == 'propuesta_cliente') ||
-            (!isMr && modo == 'propuesta_ingeniero'));
-
-    final api = MeetService(dio: AppHttp.I.dio);
-
-    await showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Acciones de Meet',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 10),
-
-                if (!hasMeet) ...[
-                  ListTile(
-                    leading: const Icon(Icons.video_call_rounded),
-                    title: const Text(
-                      'Generar reunión',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final ok = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => MeetGenerarScreen(
-                                tiId: widget.tiId,
-                                isMr: isMr,
-                              ),
-                        ),
-                      );
-                      if (ok == true) await _load();
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.calendar_month_rounded),
-                    title: const Text(
-                      'Proponer reunión',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    subtitle: const Text('3 ventanas sugeridas'),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final ok = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => MeetProponerScreen(
-                                tiId: widget.tiId,
-                                isMr: isMr,
-                              ),
-                        ),
-                      );
-                      if (ok == true) await _load();
-                    },
-                  ),
-                ] else ...[
-                  if (propuestoPorOtro) ...[
-                    ListTile(
-                      leading: const Icon(
-                        Icons.check_circle_rounded,
-                        color: Color(0xFF3563FF),
-                      ),
-                      title: const Text(
-                        'Aceptar meet',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final r = await api.aceptarActual(tiId: widget.tiId);
-                        if (r['success'] == true) {
-                          await _load();
-                          return;
-                        }
-                        final err =
-                            (r['error'] ?? 'No se pudo aceptar').toString();
-                        if (mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(err)));
-                        }
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.swap_horiz_rounded),
-                      title: const Text(
-                        'Proponer otra fecha',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: const Text('Negar = proponer una nueva'),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final ok = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => MeetProponerScreen(
-                                  tiId: widget.tiId,
-                                  isMr: isMr,
-                                ),
-                          ),
-                        );
-                        if (ok == true) await _load();
-                      },
-                    ),
-                  ],
-                  ListTile(
-                    leading: const Icon(Icons.edit_calendar_rounded),
-                    title: const Text(
-                      'Cambiar reunión',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final ok = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => MeetCambiarScreen(
-                                tiId: widget.tiId,
-                                isMr: isMr,
-                                meetActual: d,
-                              ),
-                        ),
-                      );
-                      if (ok == true) await _load();
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_rounded,
-                      color: Colors.redAccent,
-                    ),
-                    title: const Text(
-                      'Eliminar meet',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final r = await api.cancelar(
-                        tiId: widget.tiId,
-                        motivo: 'Cancelado desde acciones',
-                      );
-                      if (r['success'] == true) {
-                        await _load();
-                        return;
-                      }
-                      final err =
-                          (r['error'] ?? 'No se pudo eliminar').toString();
-                      if (mounted) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text(err)));
-                      }
-                    },
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) =>
+                ScheduleScreen(ticketId: widget.tiId, visit: false, ticket: d),
+      ),
     );
+    if (mounted) await _load();
   }
-
-  // ---------------- helpers ----------------
 
   String _s(dynamic v, [String fb = '']) => (v ?? fb).toString();
 
@@ -341,6 +130,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
   // Acción requerida (igual que ya venimos manejando)
   String? _accionRequerida(Map<String, dynamic> t) {
+    if (t['accionActual'] is Map) {
+      final action = t['accionActual'] as Map;
+      return action['required'] == true
+          ? '${action['title'] ?? 'Revisar ticket'}'
+          : null;
+    }
     final proc = _s(t['tiProceso']).toLowerCase().trim();
 
     if (proc == 'logs') return 'Se requieren logs';
@@ -374,7 +169,26 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 
   Future<void> _handlePrimaryAction() async {
-    final proc = _s(d['tiProceso']).toLowerCase().trim();
+    final action = d['accionActual'];
+    final key = action is Map ? '${action['key'] ?? ''}' : '';
+    final proc = key.isNotEmpty ? key : _s(d['tiProceso']).toLowerCase().trim();
+    if (proc == 'encuesta' || proc == 'encuesta satisfaccion') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => SurveyScreen(
+                ticketId: widget.tiId,
+                sheet:
+                    d['hojaServicio'] is Map
+                        ? Map<String, dynamic>.from(d['hojaServicio'])
+                        : const {},
+              ),
+        ),
+      );
+      if (mounted) await _load();
+      return;
+    }
 
     if (proc == 'logs') {
       final tiId = widget.tiId;
@@ -421,6 +235,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     required String marca,
     required String modeloSinVersion,
   }) {
+    final canonical = AppConfig.mediaUrl(d['eqImgPath']);
+    if (canonical.isNotEmpty) return canonical;
     final m = Uri.encodeComponent(marca.trim());
     final mod = Uri.encodeComponent(modeloSinVersion.trim());
     return 'https://mrsos.com.mx/img/Equipos/$m/$mod.png';
@@ -499,6 +315,54 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 ],
               ),
               const SizedBox(height: 22),
+              if (_error != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Text(_error!),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (!_loading && _error == null)
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    if (_s(d['tiMeetEstado']).isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: _openMeetActions,
+                        icon: const Icon(Icons.video_call_outlined),
+                        label: const Text('Reunión y enlace'),
+                      ),
+                    OutlinedButton.icon(
+                      onPressed:
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => TicketChatScreen(
+                                    tiId: widget.tiId,
+                                    folio: widget.folio,
+                                  ),
+                            ),
+                          ),
+                      icon: const Icon(Icons.forum_outlined),
+                      label: const Text('Mensajes'),
+                    ),
+                    if (_s(d['tiVisitaEstado']).isNotEmpty ||
+                        _s(d['tiVisitaFecha']).isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: () => _openVisitaFlow(d),
+                        icon: const Icon(Icons.location_on_outlined),
+                        label: const Text('Visita y acceso'),
+                      ),
+                  ],
+                ),
               MRSkeleton(
                 enabled: _loading,
                 child: MRSectionCard(
@@ -672,7 +536,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                               color: MRSColors.blueSoft,
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: Image.network(
+                            child: SessionImage(
                               imageUrl,
                               fit: BoxFit.contain,
                               errorBuilder:
@@ -710,7 +574,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                                 const SizedBox(height: 10),
                                 SizedBox(
                                   height: 24,
-                                  child: Image.network(
+                                  child: SessionImage(
                                     brandUrl,
                                     alignment: Alignment.centerLeft,
                                     fit: BoxFit.contain,
@@ -896,7 +760,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         child: Container(
                           color: const Color(0xFFF7F9FC),
 
-                          child: Image.network(
+                          child: SessionImage(
                             imgEquipo,
                             fit: BoxFit.contain,
                             errorBuilder:
@@ -934,7 +798,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                             const SizedBox(height: 10),
                             SizedBox(
                               height: 30,
-                              child: Image.network(
+                              child: SessionImage(
                                 imgMarca,
                                 fit: BoxFit.contain,
                                 errorBuilder:

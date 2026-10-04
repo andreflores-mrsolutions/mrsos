@@ -11,6 +11,7 @@ import 'package:mrsos/screens/user_profile_screen.dart';
 import 'package:mrsos/screens/usuarios_list_screen.dart';
 import '../services/push_service.dart';
 import '../screens/notifications_screen.dart';
+import 'chat_screen.dart';
 import '../config/app_config.dart';
 import 'package:mrsos/services/session_store.dart';
 import '../services/app_http.dart';
@@ -33,6 +34,12 @@ class HomeDashboardScreen extends StatefulWidget {
 
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   int _tabIndex = 0;
+  final _homeKey = GlobalKey<_HomeTabState>();
+  void _selectTab(int index) {
+    setState(() => _tabIndex = index);
+    if (index == 0) _homeKey.currentState?._onRefresh();
+  }
+
   final Map<int, Widget> _visitedTabs = {};
 
   @override
@@ -53,9 +60,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     index,
     () => switch (index) {
       0 => HomeTab(
+        key: _homeKey,
         usId: widget.usId,
         userName: widget.userName,
-        onTickets: () => setState(() => _tabIndex = 1),
+        onTickets: () => _selectTab(1),
       ),
       1 => TicketsSedesScreen(
         usId: widget.usId,
@@ -87,7 +95,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         ),
         child: NavigationBar(
           selectedIndex: _tabIndex,
-          onDestinationSelected: (i) => setState(() => _tabIndex = i),
+          onDestinationSelected: _selectTab,
           height: 72,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
@@ -179,25 +187,16 @@ class _HomeTabState extends State<HomeTab> {
     try {
       final current = await api.tickets();
       final meta = AppHttp.jsonMap(current['meta'] ?? {});
-      Map<String, dynamic> supplemental = {};
-      String? warning;
-      try {
-        supplemental = await api.getIndexData();
-      } catch (_) {
-        warning =
-            'Tickets actualizados. No se pudo consultar la agenda de Health Check.';
-      }
       if (!mounted) return;
       setState(() {
         indexData = {
-          ...supplemental,
           'tickets': current['tickets'],
           'ticketsAbiertos': meta['abiertos'],
           'actionCount': meta['accion'],
         };
         stats = meta;
         ticketsSedes = IndexService.groupBySite(current);
-        _error = warning;
+        _error = null;
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -223,8 +222,14 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
+  Future<T?> _pushAndRefresh<T>(BuildContext context, Route<T> route) async {
+    final result = await Navigator.push<T>(context, route);
+    if (mounted) await _onRefresh();
+    return result;
+  }
+
   Future<void> _onNotificationPressed() async {
-    await Navigator.push(
+    await _pushAndRefresh(
       context,
       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
     );
@@ -234,7 +239,7 @@ class _HomeTabState extends State<HomeTab> {
     if (widget.onTickets != null) {
       widget.onTickets!();
     } else {
-      Navigator.push(
+      _pushAndRefresh(
         context,
         MaterialPageRoute(
           builder:
@@ -276,8 +281,12 @@ class _HomeTabState extends State<HomeTab> {
       onRefresh: _onRefresh,
       onTickets: _openTickets,
       onNotifications: _onNotificationPressed,
+      onMessages:
+          () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const ChatsScreen())),
       onProfile:
-          () => Navigator.push(
+          () => _pushAndRefresh(
             context,
             MaterialPageRoute(
               builder:
@@ -287,7 +296,7 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
       onCreateTicket:
-          () => Navigator.push(
+          () => _pushAndRefresh(
             context,
             MaterialPageRoute(
               builder:
@@ -296,7 +305,7 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
       onCreateHealth:
-          () => Navigator.push(
+          () => _pushAndRefresh(
             context,
             MaterialPageRoute(
               builder:
@@ -306,7 +315,7 @@ class _HomeTabState extends State<HomeTab> {
       onTicket: (item) {
         final id = _safeInt(item['tiId']);
         if (id <= 0) return;
-        Navigator.push(
+        _pushAndRefresh(
           context,
           MaterialPageRoute(
             builder:
@@ -318,7 +327,7 @@ class _HomeTabState extends State<HomeTab> {
         );
       },
       onHealth:
-          (item) => Navigator.push(
+          (item) => _pushAndRefresh(
             context,
             MaterialPageRoute(
               builder:
@@ -330,17 +339,14 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
       onSite:
-          (item) => Navigator.push(
+          (item) => _pushAndRefresh(
             context,
             MaterialPageRoute(
               builder:
                   (_) => TicketsSedesScreen(
                     usId: widget.usId,
                     userName: widget.userName,
-                    initialCsId:
-                        _safeInt(item['csId']) == 0
-                            ? null
-                            : _safeInt(item['csId']),
+                    initialSiteKey: item['viewKey']?.toString(),
                   ),
             ),
           ),
@@ -390,15 +396,5 @@ class _HomeTabState extends State<HomeTab> {
         }).toList();
 
     return items;
-  }
-
-  int _countActionRequired(List<Map<String, dynamic>> items) {
-    return items.where((item) {
-      final proc = (item['tiProceso'] ?? '').toString().toLowerCase();
-      return proc.contains('logs') ||
-          proc.contains('meet') ||
-          proc.contains('visita') ||
-          proc.contains('encuesta');
-    }).length;
   }
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../services/visita_service.dart';
+import '../services/app_http.dart';
 
 class VisitaDatosScreen extends StatefulWidget {
   const VisitaDatosScreen({
@@ -36,19 +37,31 @@ class _VisitaDatosScreenState extends State<VisitaDatosScreen> {
     if (folio.isNotEmpty) _folioCtrl.text = folio;
   }
 
+  @override
+  void dispose() {
+    _folioCtrl.dispose();
+    _comentCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickFile() async {
     final res = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
       withData: false,
     );
-    if (res == null || res.files.isEmpty) return;
+    if (!mounted || res == null || res.files.isEmpty) return;
+    if (res.files.single.size > 10 * 1024 * 1024) {
+      _toast('El folio debe pesar máximo 10 MB.');
+      return;
+    }
     final path = res.files.single.path;
     if (path == null) return;
     setState(() => _file = File(path));
   }
 
   Future<void> _submit() async {
+    if (_saving) return;
     final folio = _folioCtrl.text.trim();
     if (folio.isEmpty) {
       _toast('Ingresa el folio de entrada');
@@ -68,13 +81,14 @@ class _VisitaDatosScreenState extends State<VisitaDatosScreen> {
         Navigator.pop(context, true);
       }
     } catch (e) {
-      _toast('Error: $e');
+      _toast(AppHttp.friendlyError(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   void _toast(String m) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
   }
 

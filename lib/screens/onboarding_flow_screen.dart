@@ -1,12 +1,11 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mrsos/services/app_http.dart';
 import 'package:mrsos/services/onboarding_service.dart';
 
-import '../services/profile_service.dart';
-import '../services/session_store.dart';
 import 'home_screen.dart';
 
 class OnboardingFlowScreen extends StatefulWidget {
@@ -50,10 +49,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   @override
   void initState() {
     super.initState();
-    _svc = OnboardingService(
-      dio: AppHttp.I.dio,
-      savePath: '/guardar_onboarding_app.php',
-    );
+    _svc = OnboardingService(dio: AppHttp.I.dio);
 
     usId = int.tryParse('${widget.user['usId'] ?? 0}') ?? 0;
 
@@ -210,16 +206,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     return re.hasMatch(s);
   }
 
-  bool _validPassword(String p) {
-    if (p.length < 8) return false;
-    if (!RegExp(r'[A-Z]').hasMatch(p)) return false;
-    if (!RegExp(r'[a-z]').hasMatch(p)) return false;
-    if (!RegExp(r'[0-9]').hasMatch(p)) return false;
-    if (!RegExp(r'[!@#$%^&*()_\-+={}[\]:;"\<>,.?/~`\\|]').hasMatch(p)) {
-      return false;
-    }
-    return true;
-  }
+  bool _validPassword(String p) =>
+      p.length >= 10 &&
+      RegExp(r'[A-Za-z]').hasMatch(p) &&
+      RegExp(r'\d').hasMatch(p);
 
   Future<void> _pickAvatar() async {
     final picker = ImagePicker();
@@ -256,7 +246,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     }
     if (!_validPassword(p1)) {
       _snack(
-        'La contraseña no cumple requisitos (min 8, mayúscula, minúscula, número y especial)',
+        'Usa al menos 10 caracteres e incluye letras y números.',
         isError: true,
       );
       return;
@@ -274,6 +264,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         usUsername: usUsername,
         pass1: changingPass ? _pass1.text : '',
         pass2: changingPass ? _pass2.text : '',
+        avatar:
+            _avatarFile == null
+                ? null
+                : await MultipartFile.fromFile(_avatarFile!.path),
       );
 
       if (!mounted) return;
@@ -301,7 +295,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         (r) => false,
       );
     } catch (e) {
-      _snack('Error: $e', isError: true);
+      if (mounted) _snack(AppHttp.friendlyError(e), isError: true);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -892,9 +886,9 @@ class _PasswordStep extends StatelessWidget {
           const SizedBox(height: 14),
           const Text(
             'Vamos a cambiar tu contraseña.\n'
-            'Debe contener al menos:\n'
-            'una letra mayúscula, una minúscula,\n'
-            'un número y un carácter especial.',
+            'Debe contener:\n'
+            'al menos 10 caracteres,\n'
+            'incluyendo letras y números.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -911,10 +905,10 @@ class _PasswordStep extends StatelessWidget {
           const Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '•  Mínimo 8 caracteres.\n'
-              '•  Al menos una mayúscula (A-Z) y una minúscula (a-z).\n'
+              '•  Mínimo 10 caracteres.\n'
+              '•  Al menos una letra (A-Z o a-z).\n'
               '•  Al menos un número (0-9).\n'
-              '•  Al menos un carácter especial (!@#\$%^&* etc.).',
+              '•  Evita reutilizar contraseñas de otros servicios.',
               style: TextStyle(
                 fontSize: 13.2,
                 height: 1.4,

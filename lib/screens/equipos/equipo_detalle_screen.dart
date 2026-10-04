@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/screens/ticket_detail_screen.dart';
 import 'package:mrsos/services/app_http.dart';
@@ -5,8 +6,13 @@ import '../../services/equipos_service.dart';
 import '../../widget/mr_skeleton.dart';
 
 class MisEquiposDetalleScreen extends StatefulWidget {
-  const MisEquiposDetalleScreen({super.key, required this.peId});
+  const MisEquiposDetalleScreen({
+    super.key,
+    required this.peId,
+    required this.pcId,
+  });
   final int peId;
+  final int pcId;
 
   @override
   State<MisEquiposDetalleScreen> createState() =>
@@ -37,7 +43,7 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final r = await _api.detalleEquipo(peId: widget.peId);
+      final r = await _api.detalleEquipo(peId: widget.peId, pcId: widget.pcId);
       if (!mounted) return;
 
       if (r['success'] == true) {
@@ -58,8 +64,10 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
     }
   }
 
-  void _toast(String msg) =>
+  void _toast(String msg) {
+    if (mounted)
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   String _imgEquipo(String marca, String modelo) {
     final m = Uri.encodeComponent(marca);
@@ -173,8 +181,10 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                 enabled: _loading,
                 child: SizedBox(
                   height: 170,
-                  child: Image.network(
-                    _imgEquipo(marca, modelo),
+                  child: SessionImage(
+                    '${_d['eqImgPath'] ?? ''}'.isNotEmpty
+                        ? '${_d['eqImgPath']}'
+                        : _imgEquipo(marca, modelo),
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
@@ -246,8 +256,10 @@ class _MisEquiposDetalleScreenState extends State<MisEquiposDetalleScreen> {
                         width: 84,
                         child: Align(
                           alignment: Alignment.topRight,
-                          child: Image.network(
-                            _imgMarca(marca),
+                          child: SessionImage(
+                            '${_d['maImgPath'] ?? ''}'.isNotEmpty
+                                ? '${_d['maImgPath']}'
+                                : _imgMarca(marca),
                             height: 26,
                             fit: BoxFit.contain,
                             errorBuilder:

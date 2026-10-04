@@ -1,32 +1,27 @@
 import 'package:flutter/material.dart';
+import 'schedule_screen.dart';
 import 'package:mrsos/screens/acciones/subir_logs_screen.dart';
-import 'package:mrsos/screens/meet_proponer_screen.dart';
 import 'package:mrsos/screens/ticket_detail_screen.dart';
-import 'package:mrsos/screens/visita_datos_screen.dart';
 import '../services/index_service.dart';
+import '../services/session_store.dart';
 import '../services/app_http.dart'; // si tu IndexService usa AppHttp; si no, ajusta el import
 import '../widget/mr_skeleton.dart';
 import '../widget/colors.dart';
 import '../widget/mr_theme.dart';
 import 'createticket_screen.dart';
-import 'visita_actions_sheet.dart';
-import '../services/meet_service.dart';
-import 'meet_generar_screen.dart';
-
-import 'meet_cambiar_screen.dart';
 
 class TicketsSedesScreen extends StatefulWidget {
   const TicketsSedesScreen({
     super.key,
     required this.usId,
     required this.userName,
-    this.initialCsId,
+    this.initialSiteKey,
     this.embedded = false,
   });
 
   final String usId;
   final String userName;
-  final int? initialCsId;
+  final String? initialSiteKey;
   final bool embedded;
 
   @override
@@ -45,10 +40,13 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
   Map<String, dynamic> stats = {};
   Map<String, dynamic> ticketsSedes = {};
   bool _loading = true;
+  bool _internal = false;
+  String? _error;
   Map<String, dynamic> raw = {};
   List<Map<String, dynamic>> sedes = [];
 
-  int? _selectedCsId; // null = ALL
+  String?
+  _selectedSiteKey; // null = ALL; display key, never an authorization ID
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
@@ -56,7 +54,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
   void initState() {
     super.initState();
     api = IndexService(dio: AppHttp.I.dio); // ✅ misma cookie PHPSESSID
-    _selectedCsId = widget.initialCsId;
+    _selectedSiteKey = widget.initialSiteKey;
     _load();
   }
 
@@ -68,259 +66,44 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
 
   String _s(dynamic v) => (v ?? '').toString();
 
-  bool _isMrFromTicket(Map<String, dynamic> t) {
-    // Intentamos detectar rol si viene en el listado
-    final rol = _s(t['usRol']).toUpperCase().trim();
-    if (rol.contains('ADMIN')) return true;
-    if (rol.contains('ING')) return true;
-    if (rol.contains('MR')) return true;
-
-    // Fallback: si no viene rol, asumimos cliente (false)
-    return false;
-  }
-
   Future<void> _openVisitaFlow(Map<String, dynamic> t) async {
-    final est = _s(t['tiVisitaEstado']).toLowerCase().trim();
-
-    // 1) Sin visita -> sheet con Asignar / Proponer
-    if (est.isEmpty) {
-      await showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
+    await _pushAndRefresh(
+      context,
+      MaterialPageRoute(
         builder:
-            (_) => VisitaAccionesSheet(
-              tiId: t['tiId'],
+            (_) => ScheduleScreen(
+              ticketId: int.parse('${t['tiId']}'),
+              visit: true,
               ticket: t,
-              modo: VisitaAccionesModo.crear, // solo Asignar/Proponer
             ),
-      );
-      return;
-    }
-
-    // 2) Pendiente / Confirmar -> sheet con Ver / Modificar / Cancelar
-    if (est == 'pendiente' || est == 'confirmar') {
-      await showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.transparent,
-        builder:
-            (_) => VisitaAccionesSheet(
-              tiId: t['tiId'],
-              ticket: t,
-              modo: VisitaAccionesModo.gestionar, // Modificar/Cancelar (+ ver)
-            ),
-      );
-      return;
-    }
-    if (est == 'datos_extra') {
-      return;
-    }
-    // 3) Requiere folio -> directo a Datos
-    if (est == 'requiere_folio') {
-      final ok = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VisitaDatosScreen(tiId: t['tiId'], ticket: t),
-        ),
-      );
-      if (ok == true) await _load(); // recargar ticket detail
-      return;
-    }
-
-    // default
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Estado de visita no reconocido.')),
+      ),
     );
+    if (mounted) await _load();
   }
 
   Future<void> _openMeetActions(_TicketVM vm) async {
-    final t = vm.data;
-    final tiId = int.tryParse(_s(t['tiId'])) ?? 0;
-    if (tiId <= 0) return;
-
-    final isMr = _isMrFromTicket(t);
-
-    final estado = _s(t['tiMeetEstado']).toLowerCase().trim();
-    final modo = _s(t['tiMeetModo']).toLowerCase().trim();
-
-    final hasMeet = estado.isNotEmpty;
-    final pending = estado == 'pendiente';
-
-    final propuestoPorOtro =
-        pending &&
-        ((isMr && modo == 'propuesta_cliente') ||
-            (!isMr && modo == 'propuesta_ingeniero'));
-
-    final apiMeet = MeetService(dio: AppHttp.I.dio);
-
-    await showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Acciones de Meet',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 10),
-
-                // ------------- SIN MEET -------------
-                if (!hasMeet) ...[
-                  ListTile(
-                    leading: const Icon(Icons.video_call_rounded),
-                    title: const Text(
-                      'Generar reunión',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final ok = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => MeetGenerarScreen(tiId: tiId, isMr: isMr),
-                        ),
-                      );
-                      if (ok == true) await _load();
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.calendar_month_rounded),
-                    title: const Text(
-                      'Proponer reunión',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    subtitle: const Text('3 ventanas sugeridas'),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final ok = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => MeetProponerScreen(tiId: tiId, isMr: isMr),
-                        ),
-                      );
-                      if (ok == true) await _load();
-                    },
-                  ),
-                ] else ...[
-                  // ------------- PROPUESTA DEL OTRO (ACCION REQUERIDA) -------------
-                  if (propuestoPorOtro) ...[
-                    ListTile(
-                      leading: const Icon(
-                        Icons.check_circle_rounded,
-                        color: Color(0xFF3563FF),
-                      ),
-                      title: const Text(
-                        'Aceptar meet',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final r = await apiMeet.aceptarActual(tiId: tiId);
-                        if (r['success'] == true) {
-                          await _load();
-                          return;
-                        }
-                        final err =
-                            (r['error'] ?? 'No se pudo aceptar').toString();
-                        if (mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(err)));
-                        }
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.swap_horiz_rounded),
-                      title: const Text(
-                        'Proponer otra fecha',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: const Text('Negar = proponer una nueva'),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final ok = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) =>
-                                    MeetProponerScreen(tiId: tiId, isMr: isMr),
-                          ),
-                        );
-                        if (ok == true) await _load();
-                      },
-                    ),
-                  ],
-
-                  // ------------- YA HAY MEET ACTIVO -------------
-                  ListTile(
-                    leading: const Icon(Icons.edit_calendar_rounded),
-                    title: const Text(
-                      'Cambiar reunión',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final ok = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => MeetCambiarScreen(
-                                tiId: tiId,
-                                isMr: isMr,
-                                meetActual:
-                                    t, // aquí pasamos el ticket del listado
-                              ),
-                        ),
-                      );
-                      if (ok == true) await _load();
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_rounded,
-                      color: Colors.redAccent,
-                    ),
-                    title: const Text(
-                      'Eliminar meet',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final r = await apiMeet.cancelar(
-                        tiId: tiId,
-                        motivo: 'Cancelado desde quick actions (lista)',
-                      );
-                      if (r['success'] == true) {
-                        await _load();
-                        return;
-                      }
-                      final err =
-                          (r['error'] ?? 'No se pudo eliminar').toString();
-                      if (mounted) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text(err)));
-                      }
-                    },
-                  ),
-                ],
-              ],
+    await _pushAndRefresh(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => ScheduleScreen(
+              ticketId: int.parse('${vm.data['tiId']}'),
+              visit: false,
+              ticket: vm.data,
             ),
-          ),
-        );
-      },
+      ),
     );
+    if (mounted) await _load();
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
+      final profile = await SessionStore().getProfile();
+      _internal = ['MRSA', 'MRA', 'MRV'].contains(profile['usRol']);
       final r = await api.obtenerTicketsSedes();
       if (!mounted) return;
 
@@ -330,16 +113,31 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
       sedes = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
 
       // Si el filtro quedó en una sede que ya no existe, lo reseteamos
-      if (_selectedCsId != null &&
-          !sedes.any((s) => (s['csId'] as int?) == _selectedCsId)) {
-        _selectedCsId = null;
+      if (_selectedSiteKey != null &&
+          !sedes.any((s) => s['viewKey'] == _selectedSiteKey)) {
+        _selectedSiteKey = null;
       }
+    } catch (error) {
+      if (mounted) setState(() => _error = AppHttp.friendlyError(error));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppHttp.friendlyError(error)),
+            action: SnackBarAction(label: 'Reintentar', onPressed: _load),
+          ),
+        );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _onRefresh() async => _load();
+
+  Future<T?> _pushAndRefresh<T>(BuildContext context, Route<T> route) async {
+    final result = await Navigator.push<T>(context, route);
+    if (mounted) await _load();
+    return result;
+  }
 
   // ---------------- helpers ----------------
 
@@ -392,55 +190,24 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
     );
   }
 
-  // Accion requerida (según tu definición)
+  // The current endpoint already evaluates role and workflow state.
   String? _accionRequerida(Map<String, dynamic> t) {
-    final proc = (t['tiProceso'] ?? '').toString().toLowerCase().trim();
-
-    // LOGS
-    if (proc == 'logs') return 'Se requieren logs';
-
-    // MEET (tiMeetModo)
-    if (proc == 'meet') {
-      final modo = (t['tiMeetModo'] ?? '').toString().toLowerCase().trim();
-
-      if (modo.isEmpty) return 'Proponer un meet';
-
-      if (modo == 'propuesta_ingeniero' || modo == 'asignado_ingeniero') {
-        // texto exacto que pediste
-        return (modo == 'propuesta_ingeniero')
-            ? 'El ingeniero propuso un meet'
-            : 'El ingeniero asignó un meet';
-      }
-
-      // propuesta_cliente / asignado_cliente => sin acción requerida
-      return null;
+    final required =
+        t[_internal ? 'requiereAccionMR' : 'requiereAccionCliente'];
+    if (required != true && required != 1 && required != '1') return null;
+    if (_internal) return 'Revisar atención del ticket';
+    switch ('${t['tiProceso']}'.toLowerCase().trim()) {
+      case 'logs':
+        return 'Se requieren logs';
+      case 'meet':
+        return 'Revisar propuestas de reunión';
+      case 'visita':
+        return 'Revisar visita y acceso';
+      case 'encuesta satisfaccion':
+        return 'Encuesta de satisfacción pendiente';
+      default:
+        return 'Revisar ticket';
     }
-
-    // VISITA
-    if (proc == 'visita') {
-      final est = _s(t['tiVisitaEstado']).toLowerCase().trim();
-
-      // No hay visita
-      if (est.isEmpty) return 'Pendiente por asignar visita';
-
-      // Cliente ya la creó / esperando confirmación
-      if (est == 'pendiente' || est == 'confirmar') {
-        return 'Visita pendiente de confirmación';
-      }
-      if (est == 'datos_extra') return 'En espera del ingeniero';
-
-      // Ya confirmada -> requiere folio
-      if (est == 'requiere_folio') return 'Requiere asignación de folio';
-
-      return null;
-    }
-
-    // ENCUESTA
-    if (proc == 'encuesta satisfaccion' || proc == 'encuesta de satisfaccion') {
-      return 'Encuesta de satisfacción pendiente';
-    }
-
-    return null;
   }
 
   // Chips extra que salen arriba del card (como en tu UI)
@@ -492,8 +259,8 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
 
     final out = <_TicketVM>[];
     for (final s in sedes) {
-      final csId = (s['csId'] as int?) ?? 0;
-      if (_selectedCsId != null && csId != _selectedCsId) continue;
+      final siteKey = '${s['viewKey'] ?? ''}';
+      if (_selectedSiteKey != null && siteKey != _selectedSiteKey) continue;
 
       final clNombre = (s['clNombre'] ?? '').toString();
       final csNombre = (s['csNombre'] ?? '').toString();
@@ -503,7 +270,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
       for (final tt in tickets) {
         final t = Map<String, dynamic>.from(tt as Map);
         final vm = _TicketVM(
-          csId: csId,
+          csId: 0,
           csNombre: csNombre,
           clNombre: clNombre,
           prefix: prefix,
@@ -567,9 +334,14 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Esta acción se habilitará en la siguiente fase.'),
+    await _pushAndRefresh(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => TicketDetailScreen(
+              tiId: int.parse('${t['tiId']}'),
+              folio: '${t['folio'] ?? 'Ticket'}',
+            ),
       ),
     );
   }
@@ -630,6 +402,21 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                   ],
                 ),
               if (!widget.embedded) const SizedBox(height: 22),
+              if (_error != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Text(_error!),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               MRPageIntro(
                 eyebrow: 'Mesa de ayuda',
                 title: 'Tus tickets',
@@ -637,7 +424,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                   tooltip: 'Crear ticket',
                   icon: const Icon(Icons.add_rounded, color: Colors.white),
                   onPressed:
-                      () => Navigator.push(
+                      () => _pushAndRefresh(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -737,19 +524,21 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                     children: [
                       _FilterChipPill(
                         text: 'Todos',
-                        selected: _selectedCsId == null,
-                        onTap: () => setState(() => _selectedCsId = null),
+                        selected: _selectedSiteKey == null,
+                        onTap: () => setState(() => _selectedSiteKey = null),
                       ),
                       const SizedBox(width: 10),
                       ...sedes.map((s) {
-                        final csId = (s['csId'] as int?) ?? 0;
+                        final siteKey = '${s['viewKey'] ?? ''}';
                         final name = (s['csNombre'] ?? '').toString();
                         return Padding(
                           padding: const EdgeInsets.only(right: 10),
                           child: _FilterChipPill(
                             text: name,
-                            selected: _selectedCsId == csId,
-                            onTap: () => setState(() => _selectedCsId = csId),
+                            selected: _selectedSiteKey == siteKey,
+                            onTap:
+                                () =>
+                                    setState(() => _selectedSiteKey = siteKey),
                           ),
                         );
                       }),
@@ -827,7 +616,7 @@ class _TicketsSedesScreenState extends State<TicketsSedesScreen> {
                           accion == null ? null : () => _handleTicketAction(vm),
                       onTap: () {
                         if (parsedTiId <= 0) return;
-                        Navigator.push(
+                        _pushAndRefresh(
                           context,
                           MaterialPageRoute(
                             builder:

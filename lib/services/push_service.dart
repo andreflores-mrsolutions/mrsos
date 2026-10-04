@@ -107,6 +107,7 @@ class PushService with WidgetsBindingObserver {
         if (key != null && !_seen.add(key)) return;
         if (_seen.length > 100) _seen.remove(_seen.first);
         await refreshInbox();
+        if (!_unlocked) return;
         final notification = message.notification;
         if (notification != null) {
           try {
@@ -195,6 +196,11 @@ class PushService with WidgetsBindingObserver {
     try {
       final me = await AppHttp.I.refreshSession();
       if (!_unlocked) return;
+      if (me['forceChangePass'] == true || me['legalAccepted'] != true) {
+        lock();
+        AppHttp.I.onAccessRequired?.call();
+        return;
+      }
       await refreshInbox();
       if (!NotificationPreferences.fromSession(me).inApp) {
         await DeviceRegistration(AppHttp.I.dio).remove();
@@ -260,9 +266,15 @@ class PushService with WidgetsBindingObserver {
     }
     await DeviceRegistration(AppHttp.I.dio).remove();
     if (_ready) {
-      await FirebaseMessaging.instance.setAutoInitEnabled(false);
-      await FirebaseMessaging.instance.deleteToken();
+      try {
+        await FirebaseMessaging.instance.setAutoInitEnabled(false);
+        await FirebaseMessaging.instance.deleteToken();
+      } catch (_) {
+        // The PHP device row was already removed; Firebase cleanup is best effort.
+      }
     }
+    _seen.clear();
+    status.value = 'Inicia sesión para registrar este dispositivo.';
     _pendingOpen = false;
     await LocalNotify.clear();
   }

@@ -21,8 +21,10 @@ class _ReportesTabState extends State<ReportesTab> {
   late final ReportesService _api;
 
   bool _loading = true;
+  String? _error;
+  int _loadId = 0;
 
-  String _tab = 'HS_T'; // HS_T | HS_HC | POLIZAS
+  String _tab = 'HS_T'; // Hojas de servicio | POLIZAS
   String _q = '';
   final _search = TextEditingController();
 
@@ -45,10 +47,14 @@ class _ReportesTabState extends State<ReportesTab> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    final request = ++_loadId;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final r = await _api.listar(tab: _tab, q: _q);
-      if (!mounted) return;
+      if (!mounted || request != _loadId) return;
 
       if (r['success'] == true) {
         setState(() {
@@ -69,12 +75,13 @@ class _ReportesTabState extends State<ReportesTab> {
           }
         });
       } else {
-        _toast((r['error'] ?? r['message'] ?? 'Error').toString());
+        throw StateError(AppHttp.message(r));
       }
     } catch (e) {
-      _toast('Error: $e');
+      if (mounted && request == _loadId)
+        setState(() => _error = AppHttp.friendlyError(e));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && request == _loadId) setState(() => _loading = false);
     }
   }
 
@@ -86,8 +93,11 @@ class _ReportesTabState extends State<ReportesTab> {
       _toast('Archivo no disponible.');
       return;
     }
-    try { await DocumentService.openPdf(url); }
-    catch (error) { if (mounted) _toast(AppHttp.friendlyError(error)); }
+    try {
+      await DocumentService.openPdf(url);
+    } catch (error) {
+      if (mounted) _toast(AppHttp.friendlyError(error));
+    }
   }
 
   @override
@@ -139,19 +149,10 @@ class _ReportesTabState extends State<ReportesTab> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       _TabChip(
-                        text: 'Tickets',
+                        text: 'Hojas de servicio',
                         active: _tab == 'HS_T',
                         onTap: () {
                           setState(() => _tab = 'HS_T');
-                          _load();
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _TabChip(
-                        text: 'Health Checks',
-                        active: _tab == 'HS_HC',
-                        onTap: () {
-                          setState(() => _tab = 'HS_HC');
                           _load();
                         },
                       ),
@@ -170,7 +171,34 @@ class _ReportesTabState extends State<ReportesTab> {
 
                 const SizedBox(height: 14),
 
-                if (_tab == 'POLIZAS') ..._buildPolizas() else ..._buildHojas(),
+                if (_error != null)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Text(_error!),
+                          TextButton(
+                            onPressed: _load,
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else ...[
+                  if (_tab != 'POLIZAS')
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Hasta 500 hojas recientes, igual que en la web.',
+                      ),
+                    ),
+                  if (_tab == 'POLIZAS')
+                    ..._buildPolizas()
+                  else
+                    ..._buildHojas(),
+                ],
               ],
             ),
           ),

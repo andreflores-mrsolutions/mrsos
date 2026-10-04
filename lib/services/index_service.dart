@@ -12,8 +12,12 @@ class IndexService {
   Future<Map<String, dynamic>> tickets() async =>
       AppHttp.jsonMap((await _dio.get(_endpoint('tickets_list'))).data);
 
+  // The gateway exposes health_create, but no Health Check history endpoint.
+  // Do not infer an empty agenda from the absence of a published API.
   Future<Map<String, dynamic>> getIndexData() async =>
-      AppHttp.jsonMap((await _dio.get('/getIndexData.php')).data);
+      throw UnsupportedError(
+        'El servidor actual no publica la agenda de Health Check.',
+      );
 
   /// Kept for existing clients; the current web dashboard uses tickets.meta.
   Future<Map<String, dynamic>> estadisticasMes() async => tickets();
@@ -35,6 +39,7 @@ class IndexService {
         key,
         () => <String, dynamic>{
           'csId': ticket['csId'],
+          'viewKey': key,
           'csNombre': ticket['csNombre'] ?? 'Sin sede',
           'clNombre': ticket['clNombre'],
           'tickets': <Map<String, dynamic>>[],

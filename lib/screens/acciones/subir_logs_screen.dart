@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/app_http.dart';
+import '../log_guides_screen.dart';
 import '../../services/ticket_catalog_service.dart';
 
 class SubirLogsScreen extends StatefulWidget {
@@ -35,19 +36,21 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
   final List<PlatformFile> _files = [];
   bool _uploading = false;
 
-  String _s(String v) => v.trim();
-
-  String get _helpUrl {
-    final marca = Uri.encodeComponent(_s(widget.marca));
-    final modelo = Uri.encodeComponent(_s(widget.modelo));
-    return 'https://mrsos.com.mx/ayuda/ayuda_logs.php?marca=$marca&modelo=$modelo';
-  }
-
   Future<void> _pickFiles() async {
     final res = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
-      allowedExtensions: const ['log', 'txt', 'zip', '7z', 'rar'],
+      allowedExtensions: const [
+        'log',
+        'txt',
+        'zip',
+        '7z',
+        'rar',
+        'gz',
+        'tar',
+        'json',
+        'csv',
+      ],
       withData: false,
     );
 
@@ -55,6 +58,11 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
 
     if (res == null || res.files.isEmpty) return;
 
+    if (res.files.length > 10 ||
+        res.files.any((f) => f.size <= 0 || f.size > 25 * 1024 * 1024)) {
+      _toast('Elige hasta 10 archivos, de máximo 25 MB cada uno.');
+      return;
+    }
     setState(() {
       _files
         ..clear()
@@ -67,6 +75,7 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
   }
 
   Future<void> _upload() async {
+    if (_uploading) return;
     if (_files.isEmpty) {
       _toast('Selecciona al menos un archivo.');
       return;
@@ -77,14 +86,11 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
     try {
       final dio = AppHttp.I.dio;
 
-      for (final f in _files) {
+      for (final f in List<PlatformFile>.of(_files)) {
         final path = f.path!;
         final form = FormData.fromMap({
           'tiId': widget.tiId.toString(),
-          'files[]': await MultipartFile.fromFile(
-            path,
-            filename: f.name,
-          ), // 👈 logs (no logs[])
+          'files[]': await MultipartFile.fromFile(path, filename: f.name),
         });
 
         final r = await dio.post(
@@ -107,34 +113,23 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
           _toast(err);
           return;
         }
+        // A retry sends only files not already acknowledged by the server.
+        if (mounted) setState(() => _files.remove(f));
       }
 
       _toast('Logs enviados correctamente.');
       if (mounted) Navigator.pop(context, true);
-    } on DioException catch (e) {
-      // 🔥 debug REAL: aquí sabrás si fue red/timeout/url
-      final sc = e.response?.statusCode;
-      final body = e.response?.data;
-      _toast('Error red/servidor: ${e.type} (${sc ?? "sin status"})');
-
-      debugPrint('DIO ERROR type=${e.type} message=${e.message}');
-      debugPrint('DIO ERROR url=${e.requestOptions.uri}');
-      debugPrint('DIO ERROR status=$sc');
-      debugPrint('DIO ERROR data=$body');
-      debugPrint('DIO ERROR err=${e.error}');
     } catch (e) {
-      _toast('Error inesperado al subir logs.');
-      debugPrint('UPLOAD ERROR: $e');
+      _toast(AppHttp.friendlyError(e));
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
   }
 
   Future<void> _openHelp() async {
-    final uri = Uri.parse(_helpUrl);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      _toast('No se pudo abrir la ayuda.');
-    }
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LogGuidesScreen()));
   }
 
   Future<void> _sendMail() async {
@@ -171,7 +166,7 @@ class _SubirLogsScreenState extends State<SubirLogsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final titleModelo = _s(widget.modelo).isEmpty ? 'Equipo' : widget.modelo;
+    final titleModelo = widget.modelo.trim().isEmpty ? 'Equipo' : widget.modelo;
 
     return Scaffold(
       backgroundColor: Colors.white,

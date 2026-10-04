@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/screens/equipos/poliza_equipos_screen.dart';
 import 'package:mrsos/services/app_http.dart';
@@ -40,6 +41,14 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
       if (!mounted) return;
       setState(() => data = r);
       _ensureValidTab();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppHttp.friendlyError(error)),
+            action: SnackBarAction(label: 'Reintentar', onPressed: _load),
+          ),
+        );
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -65,36 +74,8 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
     return 0;
   }
 
-  bool _isActivePoliza(Map<String, dynamic> p) {
-    // 1) flags directos si vienen
-    final v1 = p['vigente'];
-    if (v1 is int) return v1 == 1;
-    if (v1 is bool) return v1;
-
-    final v2 = p['pcVigente'];
-    if (v2 is int) return v2 == 1;
-    if (v2 is bool) return v2;
-
-    // 2) estados por texto
-    final est = ('${p['pcEstado'] ?? p['pcEstatus'] ?? ''}').toLowerCase();
-    if (est.contains('venc')) return false;
-    if (est.contains('act') || est.contains('vig')) return true;
-
-    // 3) por fecha fin (yyyy-mm-dd)
-    final fin = '${p['pcFechaFin'] ?? ''}'.trim();
-    if (fin.isNotEmpty) {
-      final dt = DateTime.tryParse(fin);
-      if (dt != null) {
-        final today = DateTime.now();
-        final d0 = DateTime(today.year, today.month, today.day);
-        final d1 = DateTime(dt.year, dt.month, dt.day);
-        return !d1.isBefore(d0);
-      }
-    }
-
-    // default: activa
-    return true;
-  }
+  bool _isActivePoliza(Map<String, dynamic> p) =>
+      EquiposService.isActivePolicy(p);
 
   bool _hasVencidas() {
     final list = _polizas().map((e) => Map<String, dynamic>.from(e)).toList();
@@ -200,7 +181,11 @@ class _MisEquiposTabState extends State<MisEquiposTab> {
                     onTapEquipo: (peId) {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => MisEquiposDetalleScreen(peId: peId),
+                          builder:
+                              (_) => MisEquiposDetalleScreen(
+                                peId: peId,
+                                pcId: int.parse('${p['pcId']}'),
+                              ),
                         ),
                       );
                     },
@@ -480,7 +465,9 @@ class _PolizaSection extends StatelessWidget {
             final site = '${e['csNombre'] ?? ''}'.trim();
             final tickets = _ticketsDeEquipo(id);
             final imageUrl =
-                'https://mrsos.com.mx/img/Equipos/${Uri.encodeComponent(brand)}/${Uri.encodeComponent(model)}.png';
+                '${e['eqImgPath'] ?? ''}'.isNotEmpty
+                    ? '${e['eqImgPath']}'
+                    : 'https://mrsos.com.mx/img/Equipos/${Uri.encodeComponent(brand)}/${Uri.encodeComponent(model)}.png';
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
@@ -508,7 +495,7 @@ class _PolizaSection extends StatelessWidget {
                                 color: MRSColors.soft,
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: Image.network(
+                              child: SessionImage(
                                 imageUrl,
                                 fit: BoxFit.contain,
                                 errorBuilder:

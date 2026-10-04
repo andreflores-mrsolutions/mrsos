@@ -1,3 +1,4 @@
+import 'package:mrsos/widget/session_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mrsos/services/app_http.dart';
 import 'package:dio/dio.dart';
@@ -154,7 +155,7 @@ class _AdminUsuarioDetalleScreenState extends State<AdminUsuarioDetalleScreen> {
       radius: 44,
       backgroundColor: const Color.fromARGB(255, 230, 232, 255),
       child: ClipOval(
-        child: Image.network(
+        child: SessionImage(
           url,
           width: 88,
           height: 88,

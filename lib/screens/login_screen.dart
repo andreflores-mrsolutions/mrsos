@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:mrsos/screens/onboarding_flow_screen.dart';
+import 'access_gate_screen.dart';
+import 'mfa_screen.dart';
+import 'legal_screen.dart';
 import '../services/app_http.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
 import '../widget/MRPrimaryButton.dart';
 import '../widget/colors.dart';
-import '../services/session_store.dart';
 
 class WelcomeLoginScreen extends StatefulWidget {
   const WelcomeLoginScreen({super.key, this.dio});
@@ -24,6 +24,7 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
 
   bool _loading = false;
   bool _obscure = true;
+  bool _remember = false;
 
   late final AuthService _auth;
 
@@ -46,55 +47,35 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
   }
 
   Future<void> _doLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
+    if (_loading || !_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      final r = await _auth.login(
-        usId: _userCtrl.text.trim(),
+      final result = await _auth.login(
+        usId: _userCtrl.text,
         usPass: _passCtrl.text,
+        remember: _remember,
       );
-
       if (!mounted) return;
-
-      if (!r.success) {
+      if (!result.success) {
         _snack(
-          r.message.isNotEmpty ? r.message : 'Credenciales inválidas',
+          result.message.isEmpty ? 'Credenciales inválidas' : result.message,
           isError: true,
         );
         return;
       }
-
-      if (r.forceChangePass || r.onboardingRequired) {
-        final u = r.user!;
-        Navigator.of(context).pushReplacement(
+      _passCtrl.clear();
+      if (result.mfaRequired) {
+        await Navigator.of(context).push(
           MaterialPageRoute(
             builder:
-                (_) => OnboardingFlowScreen(
-                  user: u,
-                  forceChangePass: r.forceChangePass,
-                ),
+                (_) =>
+                    MfaScreen(auth: _auth, challenge: result, dio: widget.dio),
           ),
         );
-        return; // <- IMPORTANTÍSIMO
-      }
-
-      // aquí ya sigue el flujo normal (guardar sesión / ir a Home)
-
-      if (r.success && r.user != null) {
-        final u = r.user!;
-        await SessionStore.saveServerSession(u);
-        if (!mounted) return;
-
-        // navegar
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder:
-                (_) => HomeDashboardScreen(
-                  usId: '${u['usId']}',
-                  userName: u['usNombre']?.toString() ?? 'Usuario',
-                ),
-          ),
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => AccessGateScreen(dio: widget.dio)),
+          (_) => false,
         );
       }
     } catch (e) {
@@ -277,13 +258,32 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
-                                  onPressed: () {},
+                                  onPressed:
+                                      () => _snack(
+                                        'Contacta a soporte para recuperar tu acceso de forma segura.',
+                                      ),
                                   child: const Text(
                                     '¿Olvidaste tu contraseña?',
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 8),
+                              CheckboxListTile(
+                                contentPadding: EdgeInsets.zero,
+                                value: _remember,
+                                onChanged:
+                                    _loading
+                                        ? null
+                                        : (v) => setState(
+                                          () => _remember = v == true,
+                                        ),
+                                title: const Text(
+                                  'Mantener sesión hasta 7 días',
+                                ),
+                                subtitle: const Text(
+                                  'Sólo en un teléfono de uso personal.',
+                                ),
+                              ),
                               MRPrimaryButton(
                                 text:
                                     _loading
@@ -293,6 +293,7 @@ class _WelcomeLoginScreenState extends State<WelcomeLoginScreen> {
                                 icon: Icons.login_rounded,
                                 onPressed: _loading ? null : _doLogin,
                               ),
+                              const LegalLinks(),
                               const SizedBox(height: 16),
                               const Text(
                                 '¿Necesitas ayuda? Contacta a soporte',
